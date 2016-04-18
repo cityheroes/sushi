@@ -1,0 +1,23 @@
+{
+  "name": "Sushi",
+  "authors": [
+    "Mauro Trigo <mauro.trigo@gmail.com>"
+  ],
+  "description": "",
+  "main": "src/sushi.js",
+  "moduleType": [],
+  "license": "MIT",
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "devDependencies": {
+    "chai": "~3.5.0",
+    "jquery": "~2.1.4",
+    "mocha": "~2.4.5"
+  }
+}
