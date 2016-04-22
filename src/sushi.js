@@ -97,9 +97,9 @@ SushiHelper.calculate = function(operands, operator) {
 	}, operators[operator].neutral);
 };
 
-var SushiCore = {};
+var SushiCoreProcesses = {};
 
-SushiCore.filters = {
+SushiCoreProcesses.filters = {
 
 	match: function(item, filter, helper) {
 		return helper.extract(item, filter.path) === filter.match;
@@ -119,7 +119,7 @@ SushiCore.filters = {
 
 };
 
-SushiCore.transformations = {
+SushiCoreProcesses.transformations = {
 
 	extract: function(item, transformation, helper) {
 		return helper.parsePath(transformation.path).map(function(path) {
@@ -159,7 +159,7 @@ SushiCore.transformations = {
 
 };
 
-SushiCore.aggregations = {
+SushiCoreProcesses.aggregations = {
 
 	total: function(item, aggregation, previousValue, helper) {
 		return previousValue + 1;
@@ -213,18 +213,18 @@ var Sushi = function() {
 	this._transformations = {};
 	this._aggregations = {};
 
-	this._addCartridges('filter', SushiCore.filters);
-	this._addCartridges('transformation', SushiCore.transformations);
-	this._addCartridges('aggregation', SushiCore.aggregations);
+	this._addProcesses('filter', SushiCoreProcesses.filters);
+	this._addProcesses('transformation', SushiCoreProcesses.transformations);
+	this._addProcesses('aggregation', SushiCoreProcesses.aggregations);
 };
 
-Sushi.prototype._addCartridges = function(type, cartridges) {
+Sushi.prototype._addProcesses = function(type, cartridges) {
 	for(var name in cartridges) {
-		this._addCartridge(type, name, cartridges[name]);
+		this._addProcess(type, name, cartridges[name]);
 	}
 };
 
-Sushi.prototype._addCartridge = function(type, name, method) {
+Sushi.prototype._addProcess = function(type, name, method) {
 
 	if (!type) {
 		return this._invalidCartridge();
@@ -233,9 +233,9 @@ Sushi.prototype._addCartridge = function(type, name, method) {
 	this['_' + type + 's'][name] = method;
 };
 
-Sushi.prototype.addFilter = function(name, method) { this._addCartridge('filter', name, method); };
-Sushi.prototype.addTransformation = function(name, method) { this._addCartridge('transformation', name, method); };
-Sushi.prototype.addAggregation = function(name, method) { this._addCartridge('aggregation', name, method); };
+Sushi.prototype.addFilter = function(name, method) { this._addProcess('filter', name, method); };
+Sushi.prototype.addTransformation = function(name, method) { this._addProcess('transformation', name, method); };
+Sushi.prototype.addAggregation = function(name, method) { this._addProcess('aggregation', name, method); };
 
 Sushi.prototype.roll = function(collection, recipe) {
 
