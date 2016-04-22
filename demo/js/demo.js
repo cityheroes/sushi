@@ -21,20 +21,29 @@ var recipe = {
 		// 	separator: ' - ',
 		// },
 		{
-			name: 'sum',
+			name: 'operationMap',
+			operator: 'addition',
 			output: 'total',
 			path: ['user.friends_count', 'user.followers_count'],
 		},
 		{
-			name: 'sum',
+			name: 'operationMap',
+			operator: 'addition',
 			output: 'total_2',
-			path: ['total', 'user.followers_count'],
+			path: ['user.followers_count'],
 		},
 		{
-			name: 'divide',
+			name: 'operation',
+			operator: 'multiplication',
 			output: 'total_3',
-			path: ['user.friends_count', 'user.followers_count', ['user.entities.url.urls[0].indices[1]', 1]],
+			path: 'user.followers_count',
+			operand: 5
 		},
+		// {
+		// 	name: 'divide',
+		// 	output: 'total_3',
+		// 	path: ['user.friends_count', 'user.followers_count', ['user.entities.url.urls[0].indices[1]', 1]],
+		// },
 		// {
 		// 	name: 'extract',
 		// 	output: 'sup',
@@ -50,6 +59,11 @@ var recipe = {
 			output: 'waleed indices',
 			path: [['user.entities.url.urls[0].indices[1]', 'NOPE'], 'user.friends_count'],
 		},
+		{
+			name: 'extract',
+			output: 'Language Code',
+			path: 'metadata.iso_language_code',
+		},
 		// {
 		// 	name: 'extract',
 		// 	output: 'name',
@@ -57,17 +71,54 @@ var recipe = {
 		// 	path: 'user.name',
 		// }
 	],
-	// aggregations: [
-	// 	{
-	// 		name: 'sum',
-	// 		output: 'totalz',
-	// 		// path: 'user.friends_count',
-	// 		path: ['total', 'indices'],
-	// 	},
-	// ]
+	aggregations: [
+		{
+			name: 'total',
+			output: 'total',
+			// path: 'user.friends_count',
+			path: 'total',
+		},
+		{
+			name: 'sum',
+			output: 'small total',
+			// path: 'user.friends_count',
+			path: 'total',
+		},
+		{
+			name: 'sumAndOperation',
+			output: 'big total',
+			path: ['total_2', 'total_3'],
+			operator: 'multiplication',
+			operand: 4
+		},
+		{
+			name: 'count',
+			output: 'count',
+			// path: 'user.friends_count',
+			path: 'indices',
+		},
+		{
+			name: 'countCompare',
+			output: 'count_pt',
+			path: 'Language Code',
+			match: 'pt'
+		},
+		{
+			name: 'countCompare',
+			output: 'count_es',
+			path: 'Language Code',
+			match: 'es'
+		},
+		{
+			name: 'countCompare',
+			output: 'count_en',
+			path: 'Language Code',
+			match: 'en'
+		},
+	]
 };
 
-sushi.addCartridge('transformation', 'waleed', function(item, transformation, helper) {
+sushi.addTransformation('waleed', function(item, transformation, helper) {
 	return helper.extract(item, transformation.path, transformation.default) + ' Waleed!';
 });
 

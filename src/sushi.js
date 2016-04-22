@@ -35,6 +35,68 @@ SushiHelper.extract = function(obj, path, defaultValue) {
 	return obj || defaultValue;
 };
 
+SushiHelper.extractMap = function(item, paths, defaultValue) {
+	var that = this;
+	return this.parsePath(paths).map(function(path) {
+		return that.extract(item, path, defaultValue);
+	});
+};
+
+SushiHelper.compare = function(lvalue, rvalue, operator) {
+
+	operator = operator || 'eq';
+
+	var operators = {
+		'eq':      function(l, r) { return l === r; },
+		'ne':      function(l, r) { return l !== r; },
+		'lt':        function(l, r) { return l < r; },
+		'gt':        function(l, r) { return l > r; },
+		'le':       function(l, r) { return l <= r; },
+		'ge':       function(l, r) { return l >= r; },
+	};
+
+	return operators[operator](lvalue, rvalue);
+};
+
+SushiHelper.calculate = function(operands, operator) {
+
+	operator = operator || 'sum';
+
+	var operators = {
+		'addition': {
+			method: function(lvalue, rvalue) {
+				return lvalue + rvalue;
+			},
+			neutral: 0
+		},
+		'subtraction': {
+			method: function(lvalue, rvalue) {
+				return lvalue - rvalue;
+			},
+			neutral: 0
+		},
+		'division': {
+			method: function(lvalue, rvalue) {
+				return lvalue / rvalue;
+			},
+			neutral: 1
+		},
+		'multiplication': {
+			method: function(lvalue, rvalue) {
+				return lvalue * rvalue;
+			},
+			neutral: 1
+		},
+	};
+
+	return operands.reduce(function(memo, value) {
+		return operators[operator].method(
+			parseFloat(value) || operators[operator].neutral,
+			memo
+		);
+	}, operators[operator].neutral);
+};
+
 var SushiCore = {};
 
 SushiCore.filters = {
@@ -45,7 +107,15 @@ SushiCore.filters = {
 
 	mismatch: function(item, filter, helper) {
 		return helper.extract(item, filter.path) !== filter.match;
-	}
+	},
+
+	compare: function(item, filter, helper) {
+		return helper.compare(
+			helper.extract(item, filter.path),
+			filter.match,
+			filter.operator
+		);
+	},
 
 };
 
@@ -57,60 +127,82 @@ SushiCore.transformations = {
 		}).join(transformation.separator || ' ');
 	},
 
+	convert: function(item, transformation, helper) {
+		var comparison = helper.compare(
+			helper.extract(item, transformation.path),
+			transformation.match,
+			transformation.operator
+		);
+		return comparison ? transformation.truthful : transformation.truthful;
+	},
+
+	operation: function(item, transformation, helper) {
+		return helper.calculate(
+			[helper.extract(item, transformation.path), transformation.operand],
+			transformation.operator
+		);
+	},
+
 	sum: function(item, transformation, helper) {
-		return helper.parsePath(transformation.path).reduce(function(memo, path) {
-			return parseFloat((helper.extract(item, path) || 0)) + memo;
-		}, 0);
+		return helper.calculate(
+			[helper.extract(item, transformation.path), transformation.operand],
+			'addition'
+		);
 	},
 
-	subtract: function(item, transformation, helper) {
-		return helper.parsePath(transformation.path).reduce(function(memo, path) {
-			return parseFloat((helper.extract(item, path) || 0)) - memo;
-		}, 0);
-	},
-
-	multiply: function(item, transformation, helper) {
-		return helper.parsePath(transformation.path).reduce(function(memo, path) {
-			return parseFloat((helper.extract(item, path) || 1)) * memo;
-		}, 1);
-	},
-
-	divide: function(item, transformation, helper) {
-		return helper.parsePath(transformation.path).reduce(function(memo, path) {
-			return parseFloat((helper.extract(item, path) || 1)) / memo;
-		}, 1);
+	operationMap: function(item, transformation, helper) {
+		return helper.calculate(
+			helper.extractMap(item, transformation.path),
+			transformation.operator
+		);
 	},
 
 };
 
 SushiCore.aggregations = {
 
-	count: function(item, aggregation, previousValue, helper) {
+	total: function(item, aggregation, previousValue, helper) {
 		return previousValue + 1;
 	},
 
+	count: function(item, aggregation, previousValue, helper) {
+		var value = helper.extract(item, aggregation.path);
+		return value ? previousValue + 1 : previousValue;
+	},
+
+	countCompare: function(item, aggregation, previousValue, helper) {
+		return helper.compare(
+			helper.extract(item, aggregation.path),
+			aggregation.match,
+			aggregation.operator
+		) ? previousValue + 1 : previousValue;
+	},
+
+	operation: function(item, aggregation, previousValue, helper) {
+		return helper.calculate(
+			[helper.extract(item, aggregation.path), previousValue],
+			aggregation.operator
+		);
+	},
+
 	sum: function(item, aggregation, previousValue, helper) {
-		return previousValue + helper.parsePath(aggregation.path).reduce(function(memo, path) {
-			return parseFloat((helper.extract(item, path) || 0)) + memo;
-		}, 0);
+		return helper.calculate(
+			[helper.extract(item, aggregation.path), previousValue],
+			'addition'
+		);
 	},
 
-	subtract: function(item, aggregation, previousValue, helper) {
-		return previousValue + helper.parsePath(aggregation.path).reduce(function(memo, path) {
-			return parseFloat((helper.extract(item, path) || 0)) - memo;
-		}, 0);
-	},
+	sumAndOperation: function(item, aggregation, previousValue, helper) {
+		console.log(previousValue, helper.extract(item, aggregation.path));
+		var sum = helper.calculate(
+			[helper.extract(item, aggregation.path), previousValue],
+			'addition'
+		);
 
-	multiply: function(item, aggregation, previousValue, helper) {
-		return previousValue + helper.parsePath(aggregation.path).reduce(function(memo, path) {
-			return parseFloat((helper.extract(item, path) || 0)) * memo;
-		}, 1);
-	},
-
-	divide: function(item, aggregation, previousValue, helper) {
-		return previousValue + helper.parsePath(aggregation.path).reduce(function(memo, path) {
-			return parseFloat((helper.extract(item, path) || 0)) / memo;
-		}, 1);
+		return helper.calculate(
+			[sum, aggregation.operand],
+			aggregation.operator
+		);
 	},
 
 };
@@ -121,19 +213,18 @@ var Sushi = function() {
 	this._transformations = {};
 	this._aggregations = {};
 
-	this.addCartridges('filter', SushiCore.filters);
-	this.addCartridges('transformation', SushiCore.transformations);
-	this.addCartridges('aggregation', SushiCore.aggregations);
+	this._addCartridges('filter', SushiCore.filters);
+	this._addCartridges('transformation', SushiCore.transformations);
+	this._addCartridges('aggregation', SushiCore.aggregations);
 };
 
-Sushi.prototype.addCartridges = function(type, cartridges) {
+Sushi.prototype._addCartridges = function(type, cartridges) {
 	for(var name in cartridges) {
-		this.addCartridge(type, name, cartridges[name]);
+		this._addCartridge(type, name, cartridges[name]);
 	}
 };
 
-Sushi.prototype.addCartridge = function(type, name, method) {
-	type = ['filter', 'transformation', 'aggregation'].indexOf(type) !== -1 ? type : false;
+Sushi.prototype._addCartridge = function(type, name, method) {
 
 	if (!type) {
 		return this._invalidCartridge();
@@ -141,6 +232,10 @@ Sushi.prototype.addCartridge = function(type, name, method) {
 
 	this['_' + type + 's'][name] = method;
 };
+
+Sushi.prototype.addFilter = function(name, method) { this._addCartridge('filter', name, method); };
+Sushi.prototype.addTransformation = function(name, method) { this._addCartridge('transformation', name, method); };
+Sushi.prototype.addAggregation = function(name, method) { this._addCartridge('aggregation', name, method); };
 
 Sushi.prototype.roll = function(collection, recipe) {
 
@@ -181,6 +276,11 @@ Sushi.prototype._applyTransformation = function(transformation, item) {
 };
 
 Sushi.prototype._aggregate = function(collection, aggregations) {
+
+	if (aggregations.length === 0) {
+		return collection;
+	}
+
 	var that = this;
 	return aggregations.reduce(function(transformedItem, aggregation) {
 
