@@ -133,7 +133,7 @@ SushiCoreProcesses.transformations = {
 			transformation.match,
 			transformation.operator
 		);
-		return comparison ? transformation.truthful : transformation.truthful;
+		return comparison ? transformation.truth : transformation.false;
 	},
 
 	operation: function(item, transformation, helper) {
@@ -193,7 +193,6 @@ SushiCoreProcesses.aggregations = {
 	},
 
 	sumAndOperation: function(item, aggregation, previousValue, helper) {
-		console.log(previousValue, helper.extract(item, aggregation.path));
 		var sum = helper.calculate(
 			[helper.extract(item, aggregation.path), previousValue],
 			'addition'
@@ -218,16 +217,16 @@ var Sushi = function() {
 	this._addProcesses('aggregation', SushiCoreProcesses.aggregations);
 };
 
-Sushi.prototype._addProcesses = function(type, cartridges) {
-	for(var name in cartridges) {
-		this._addProcess(type, name, cartridges[name]);
+Sushi.prototype._addProcesses = function(type, processes) {
+	for(var name in processes) {
+		this._addProcess(type, name, processes[name]);
 	}
 };
 
 Sushi.prototype._addProcess = function(type, name, method) {
 
 	if (!type) {
-		return this._invalidCartridge();
+		return this._invalidProcess();
 	}
 
 	this['_' + type + 's'][name] = method;
@@ -237,15 +236,30 @@ Sushi.prototype.addFilter = function(name, method) { this._addProcess('filter', 
 Sushi.prototype.addTransformation = function(name, method) { this._addProcess('transformation', name, method); };
 Sushi.prototype.addAggregation = function(name, method) { this._addProcess('aggregation', name, method); };
 
-Sushi.prototype.roll = function(collection, recipe) {
+Sushi.prototype.roll = function(collection, recipe, parameters) {
 
 	recipe = recipe || {};
+
+	if (parameters) {
+		recipe = this._injectParameters(recipe, parameters);
+	}
 
 	collection = recipe.filters ? this._filter(collection, recipe.filters) : collection;
 	collection = recipe.transformations ? this._transform(collection, recipe.transformations) : collection;
 	collection = recipe.aggregations ? this._aggregate(collection, recipe.aggregations) : collection;
 
 	return collection;
+};
+
+Sushi.prototype._injectParameters = function(recipe, parameters) {
+
+	var serializedRecipe = JSON.stringify(recipe);
+
+	for (var parameterName in parameters) {
+		serializedRecipe = serializedRecipe.replace(new RegExp('#' + parameterName + '#', 'g'), parameters[parameterName]);
+	}
+
+	return JSON.parse(serializedRecipe);
 };
 
 Sushi.prototype._filter = function(collection, filters) {
@@ -298,11 +312,11 @@ Sushi.prototype._applyAggregation = function(aggregation, item, memo) {
 };
 
 Sushi.prototype._notFound = function(type, name) {
-	console.warn(type + ' ' + name + ' was not found in the available cartridges.');
+	console.warn(type + ' ' + name + ' was not found in the available processes.');
 	return false;
 };
 
-Sushi.prototype._invalidCartridge = function(type, name) {
-	console.warn(type + ' is not a valid cartridge type.');
+Sushi.prototype._invalidProcess = function(type, name) {
+	console.warn(type + ' is not a valid process type.');
 	return false;
 };

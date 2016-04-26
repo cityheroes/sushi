@@ -131,6 +131,6 @@ $.getJSON('../demo/js/data.json', function(data) {
 
 	var result = sushi.roll(data, recipe);
 	console.log(result);
-	console.log(JSON.stringify(result));
+	console.log(JSON.stringify(result, null, 3));
 	// console.log(JSON.stringify(data));
 });
