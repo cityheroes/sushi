@@ -1,322 +1,198 @@
-var isArray = function(obj) {
-	return Object.prototype.toString.call(obj) === '[object Array]';
+
+import SushiHelper from './SushiHelper';
+import SushiCoreProcesses from './SushiCoreProcesses';
+
+const isArray = (value) => {
+	return Array.isArray(value);
 };
 
-var SushiHelper = {};
-
-SushiHelper.parsePath = function(pathParam) {
-	return !isArray(pathParam) ? [pathParam] : pathParam;
+const isObject = (obj) => {
+	return obj === Object(obj);
 };
 
-SushiHelper.extract = function(obj, path, defaultValue) {
+// Cannot use 'export default' for compatibility issues
+module.exports = class Sushi  {
 
-	if (isArray(path)) {
-		defaultValue = path[1];
-		path = path[0];
+	constructor() {
+		this._filters = {};
+		this._mappers = {};
+		this._reducers = {};
+
+		this.addProcessesBundle(SushiCoreProcesses);
 	}
 
-	var arr = path.split('.');
+	addProcessesBundle (processesBundle) {
+		this.addProcesses('filter', processesBundle.filters);
+		this.addProcesses('mapper', processesBundle.mappers);
+		this.addProcesses('reducer', processesBundle.reducers);
+	}
 
-	while (arr.length && obj) {
-		var comp = arr.shift();
-		var match = new RegExp('(.+)\\[([0-9]*)\\]').exec(comp);
-		if ((match !== null) && (match.length == 3)) {
-			var arrayData = { arrName: match[1], arrIndex: match[2] };
-			if (obj[arrayData.arrName] !== undefined) {
-				obj = obj[arrayData.arrName][arrayData.arrIndex];
-			} else {
-				obj = undefined;
-			}
-		} else {
-			obj = obj[comp];
+	addProcesses (type, processes) {
+		for (var name in processes) {
+			this.addProcess(type, name, processes[name]);
 		}
 	}
 
-	return obj || defaultValue;
-};
+	addProcess (type, name, method) {
 
-SushiHelper.extractMap = function(item, paths, defaultValue) {
-	var that = this;
-	return this.parsePath(paths).map(function(path) {
-		return that.extract(item, path, defaultValue);
-	});
-};
+		if (!type) {
+			return this._invalidProcess();
+		}
 
-SushiHelper.compare = function(lvalue, rvalue, operator) {
-
-	operator = operator || 'eq';
-
-	var operators = {
-		'eq':      function(l, r) { return l === r; },
-		'ne':      function(l, r) { return l !== r; },
-		'lt':        function(l, r) { return l < r; },
-		'gt':        function(l, r) { return l > r; },
-		'le':       function(l, r) { return l <= r; },
-		'ge':       function(l, r) { return l >= r; },
-	};
-
-	return operators[operator](lvalue, rvalue);
-};
-
-SushiHelper.calculate = function(operands, operator) {
-
-	operator = operator || 'sum';
-
-	var operators = {
-		'addition': {
-			method: function(lvalue, rvalue) {
-				return lvalue + rvalue;
-			},
-			neutral: 0
-		},
-		'subtraction': {
-			method: function(lvalue, rvalue) {
-				return lvalue - rvalue;
-			},
-			neutral: 0
-		},
-		'division': {
-			method: function(lvalue, rvalue) {
-				return lvalue / rvalue;
-			},
-			neutral: 1
-		},
-		'multiplication': {
-			method: function(lvalue, rvalue) {
-				return lvalue * rvalue;
-			},
-			neutral: 1
-		},
-	};
-
-	return operands.reduce(function(memo, value) {
-		return operators[operator].method(
-			parseFloat(value) || operators[operator].neutral,
-			memo
-		);
-	}, operators[operator].neutral);
-};
-
-var SushiCoreProcesses = {};
-
-SushiCoreProcesses.filters = {
-
-	match: function(item, filter, helper) {
-		return helper.extract(item, filter.path) === filter.match;
-	},
-
-	mismatch: function(item, filter, helper) {
-		return helper.extract(item, filter.path) !== filter.match;
-	},
-
-	compare: function(item, filter, helper) {
-		return helper.compare(
-			helper.extract(item, filter.path),
-			filter.match,
-			filter.operator
-		);
-	},
-
-};
-
-SushiCoreProcesses.transformations = {
-
-	extract: function(item, transformation, helper) {
-		return helper.parsePath(transformation.path).map(function(path) {
-			return helper.extract(item, path, transformation.default);
-		}).join(transformation.separator || ' ');
-	},
-
-	convert: function(item, transformation, helper) {
-		var comparison = helper.compare(
-			helper.extract(item, transformation.path),
-			transformation.match,
-			transformation.operator
-		);
-		return comparison ? transformation.truth : transformation.false;
-	},
-
-	operation: function(item, transformation, helper) {
-		return helper.calculate(
-			[helper.extract(item, transformation.path), transformation.operand],
-			transformation.operator
-		);
-	},
-
-	sum: function(item, transformation, helper) {
-		return helper.calculate(
-			[helper.extract(item, transformation.path), transformation.operand],
-			'addition'
-		);
-	},
-
-	operationMap: function(item, transformation, helper) {
-		return helper.calculate(
-			helper.extractMap(item, transformation.path),
-			transformation.operator
-		);
-	},
-
-};
-
-SushiCoreProcesses.aggregations = {
-
-	total: function(item, aggregation, previousValue, helper) {
-		return previousValue + 1;
-	},
-
-	count: function(item, aggregation, previousValue, helper) {
-		var value = helper.extract(item, aggregation.path);
-		return value ? previousValue + 1 : previousValue;
-	},
-
-	countCompare: function(item, aggregation, previousValue, helper) {
-		return helper.compare(
-			helper.extract(item, aggregation.path),
-			aggregation.match,
-			aggregation.operator
-		) ? previousValue + 1 : previousValue;
-	},
-
-	operation: function(item, aggregation, previousValue, helper) {
-		return helper.calculate(
-			[helper.extract(item, aggregation.path), previousValue],
-			aggregation.operator
-		);
-	},
-
-	sum: function(item, aggregation, previousValue, helper) {
-		return helper.calculate(
-			[helper.extract(item, aggregation.path), previousValue],
-			'addition'
-		);
-	},
-
-	sumAndOperation: function(item, aggregation, previousValue, helper) {
-		var sum = helper.calculate(
-			[helper.extract(item, aggregation.path), previousValue],
-			'addition'
-		);
-
-		return helper.calculate(
-			[sum, aggregation.operand],
-			aggregation.operator
-		);
-	},
-
-};
-
-var Sushi = function() {
-
-	this._filters = {};
-	this._transformations = {};
-	this._aggregations = {};
-
-	this._addProcesses('filter', SushiCoreProcesses.filters);
-	this._addProcesses('transformation', SushiCoreProcesses.transformations);
-	this._addProcesses('aggregation', SushiCoreProcesses.aggregations);
-};
-
-Sushi.prototype._addProcesses = function(type, processes) {
-	for(var name in processes) {
-		this._addProcess(type, name, processes[name]);
-	}
-};
-
-Sushi.prototype._addProcess = function(type, name, method) {
-
-	if (!type) {
-		return this._invalidProcess();
+		this['_' + type + 's'][name] = method;
 	}
 
-	this['_' + type + 's'][name] = method;
-};
-
-Sushi.prototype.addFilter = function(name, method) { this._addProcess('filter', name, method); };
-Sushi.prototype.addTransformation = function(name, method) { this._addProcess('transformation', name, method); };
-Sushi.prototype.addAggregation = function(name, method) { this._addProcess('aggregation', name, method); };
-
-Sushi.prototype.roll = function(collection, recipe, parameters) {
-
-	recipe = recipe || {};
-
-	if (parameters) {
-		recipe = this._injectParameters(recipe, parameters);
+	addFilter (name, method) {
+		this.addProcess('filter', name, method);
 	}
 
-	collection = recipe.filters ? this._filter(collection, recipe.filters) : collection;
-	collection = recipe.transformations ? this._transform(collection, recipe.transformations) : collection;
-	collection = recipe.aggregations ? this._aggregate(collection, recipe.aggregations) : collection;
-
-	return collection;
-};
-
-Sushi.prototype._injectParameters = function(recipe, parameters) {
-
-	var serializedRecipe = JSON.stringify(recipe);
-
-	for (var parameterName in parameters) {
-		serializedRecipe = serializedRecipe.replace(new RegExp('#' + parameterName + '#', 'g'), parameters[parameterName]);
+	addMapper (name, method) {
+		this.addProcess('mapper', name, method);
 	}
 
-	return JSON.parse(serializedRecipe);
-};
+	addReducer (name, method) {
+		this.addProcess('reducer', name, method);
+	}
 
-Sushi.prototype._filter = function(collection, filters) {
-	var that = this;
-	return collection.filter(function(item) {
-		return filters.reduce(function(previousResult, filter) {
-			return previousResult && that._applyFilter(filter, item);
-		}, true);
-	});
-};
+	roll (collection, recipe, parameters) {
 
-Sushi.prototype._applyFilter = function(filter, item) {
-	return this._filters[filter.name] ? this._filters[filter.name](item, filter, SushiHelper) : this._notFound('filter', filter.name);
-};
+		if (isObject(recipe)) {
+			recipe = [recipe];
+		} else if (!isArray(recipe)) {
+			recipe = [];
+		}
 
-Sushi.prototype._transform = function(collection, transformations) {
-	var that = this;
-	return collection.map(function(item) {
-		return transformations.reduce(function(transformedItem, transformation) {
-			transformedItem[transformation.output] = that._applyTransformation(transformation, item);
-			return transformedItem;
-		}, {});
-	});
-};
+		if (parameters) {
+			recipe = this._injectParameters(recipe, parameters);
+		}
 
-Sushi.prototype._applyTransformation = function(transformation, item) {
-	return this._transformations[transformation.name] ? this._transformations[transformation.name](item, transformation, SushiHelper) : this._notFound('transformation', transformation.name);
-};
+		var that = this;
+		recipe.forEach((step) => {
+			collection = that._applyStep(collection, step);
+		});
 
-Sushi.prototype._aggregate = function(collection, aggregations) {
-
-	if (aggregations.length === 0) {
 		return collection;
 	}
 
-	var that = this;
-	return aggregations.reduce(function(transformedItem, aggregation) {
+	_applyStep (collection, step) {
+		step = step || {};
 
-		transformedItem[aggregation.output] = collection.reduce(function(memo, item) {
-			return that._applyAggregation(aggregation, item, memo);
-		}, (aggregation.start || 0));
+		collection = step.overturn ? this._overturn(collection, step.overturn) : collection;
+		collection = step.filters ? this._filter(collection, step.filters) : collection;
+		collection = step.mappers ? this._map(collection, step.mappers) : collection;
+		collection = step.reducers ? [this._reduce(collection, step.reducers)] : collection;
 
-		return transformedItem;
+		return collection;
+	}
 
-	}, {});
-};
+	_injectParameters (recipe, parameters) {
 
-Sushi.prototype._applyAggregation = function(aggregation, item, memo) {
-	return this._aggregations[aggregation.name] ? this._aggregations[aggregation.name](item, aggregation, memo, SushiHelper) : this._notFound('aggregation', aggregation.name);
-};
+		var serializedRecipe = JSON.stringify(recipe);
 
-Sushi.prototype._notFound = function(type, name) {
-	console.warn(type + ' ' + name + ' was not found in the available processes.');
-	return false;
-};
+		for (var parameterName in parameters) {
+			serializedRecipe = serializedRecipe.replace(new RegExp('#' + parameterName + '#', 'g'), parameters[parameterName]);
+		}
 
-Sushi.prototype._invalidProcess = function(type, name) {
-	console.warn(type + ' is not a valid process type.');
-	return false;
+		return JSON.parse(serializedRecipe);
+	}
+
+	_overturn (collection, overturn) {
+		var that = this;
+
+		if (!overturn.pivot) {
+			console.warn('Overturn operation needs a \'pivot\' parameter.');
+			return collection;
+		}
+
+		var pivot = overturn.pivot,
+				dest = overturn.dest
+		;
+
+		return collection.reduce((reducedItems, item) => {
+
+			var parent = item[pivot];
+
+			if (isArray(item[pivot])) {
+				reducedItems = reducedItems.concat(item[pivot]);
+			} else {
+
+			}
+
+			return reducedItems;
+		}, []);
+	}
+
+	_filter (collection, filters) {
+		var that = this;
+		return collection.filter((item) => {
+			return filters.reduce((previousResult, filter) => {
+				return previousResult && that._applyFilter(filter, item);
+			}, true);
+		});
+	}
+
+	_applyFilter (filter, item) {
+		return this._filters[filter.name] ? this._filters[filter.name](item, filter, SushiHelper) : this._notFound('filter', filter.name);
+	}
+
+	_map (collection, mappers) {
+		var that = this;
+		return collection.map((item) => {
+			return mappers.reduce((mappedItem, mapper) => {
+				mappedItem[mapper.output] = that._applyMapper(mapper, item);
+				return mappedItem;
+			}, {});
+		});
+	}
+
+	_applyMapper (mapper, item) {
+		return this._mappers[mapper.name] ? this._mappers[mapper.name](item, mapper, SushiHelper) : this._notFound('mapper', mapper.name);
+	}
+
+	_reduce (collection, reducers) {
+
+		if (reducers.length === 0) {
+			return collection;
+		}
+
+		var that = this;
+		return reducers.reduce((mappedItem, reducer) => {
+
+			mappedItem[reducer.output] = collection.reduce((memo, item) => {
+				return that._applyReducer(reducer, item, memo);
+			}, (reducer.start || 0));
+
+			return mappedItem;
+
+		}, {});
+	}
+
+	_applyReducer (reducer, item, memo) {
+		return this._reducers[reducer.name] ? this._reducers[reducer.name](item, reducer, memo, SushiHelper) : this._notFound('reducer', reducer.name);
+	}
+
+	_expand (obj, expanders) {
+		var that = this;
+		return Object.keys(obj).map((key) => {
+			return expanders.reduce((expandedItem, expander) => {
+				expandedItem[expander.output] = that._applyExpander(expander, obj[key]);
+				return expandedItem;
+			}, {});
+		});
+	}
+
+	_applyExpander (expander, item) {
+		return this._expanders[expander.name] ? this._expanders[expander.name](item, expander, SushiHelper) : this._notFound('expander', expander.name);
+	}
+
+	_notFound (type, name) {
+		console.warn(type + ' ' + name + ' was not found in the available processes.');
+		return false;
+	}
+
+	_invalidProcess (type, name) {
+		console.warn(type + ' is not a valid process type.');
+		return false;
+	}
+
 };

@@ -1,6 +1,7 @@
+
 var sushi = new Sushi();
 
-var recipe = {
+var recipe1 = {
 	filters: [
 		{
 			name: 'mismatch',
@@ -8,7 +9,7 @@ var recipe = {
 			match: 'Mirza Waheed'
 		}
 	],
-	transformations: [
+	mappers: [
 		// {
 		// 	name: 'extract',
 		// 	output: 'id',
@@ -71,7 +72,7 @@ var recipe = {
 		// 	path: 'user.name',
 		// }
 	],
-	aggregations: [
+	reducers: [
 		{
 			name: 'total',
 			output: 'total',
@@ -118,19 +119,57 @@ var recipe = {
 	]
 };
 
-sushi.addTransformation('waleed', function(item, transformation, helper) {
-	return helper.extract(item, transformation.path, transformation.default) + ' Waleed!';
+var recipe2 = {
+	mappers: [
+		{
+			name: 'operationMap',
+			operator: 'addition',
+			output: 'supertotal',
+			path: ['small total', 'big total'],
+		},
+		{
+			name: 'operation',
+			operator: 'multiplication',
+			output: 'count_es x 5',
+			path: 'count_es',
+			operand: 5
+		},
+		{
+			name: 'operation',
+			operator: 'multiplication',
+			output: 'count_en x 5',
+			path: 'count_en',
+			operand: 238
+		},
+	]
+};
+
+sushi.addMapper('waleed', function(item, mapper, helper) {
+	return helper.extract(item, mapper.path, mapper.default) + ' Waleed!';
 });
 
-$.getJSON('../demo/js/data.json', function(data) {
-	// ui.sourceData.JSONView(data);
+$(document).ready(function() {
 
-	// ui.filterButton.on('click', { dataCollection: data, process: 'filters' }, executeProcess);
-	// ui.transformButton.on('click', { dataCollection: data, process: 'transformations' }, executeProcess);
-	// ui.aggregateButton.on('click', { dataCollection: data, process: 'aggregations' }, executeProcess);
+	var dataContent = $('#content-data');
+	var resultContent = $('#content-result');
 
-	var result = sushi.roll(data, recipe);
-	console.log(result);
-	console.log(JSON.stringify(result, null, 3));
-	// console.log(JSON.stringify(data));
+	$.getJSON('./js/data2.json', function(data) {
+		data = data.data;
+
+		dataContent.html(JSON.stringify(data, null, 3));
+		// ui.sourceData.JSONView(data);
+
+		// ui.filterButton.on('click', { dataCollection: data, process: 'filters' }, executeProcess);
+		// ui.transformButton.on('click', { dataCollection: data, process: 'mappers' }, executeProcess);
+		// ui.aggregateButton.on('click', { dataCollection: data, process: 'reducers' }, executeProcess);
+
+		var result1 = sushi.roll(data, recipe1);
+		var result2 = sushi.roll(result1, recipe2);
+		resultContent.html(
+			JSON.stringify(result1, null, 3) + '\n\n' +
+			JSON.stringify(result2, null, 3)
+		);
+	}, function(error) {
+		console.warn(error);
+	});
 });

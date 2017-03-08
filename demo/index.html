@@ -4,13 +4,35 @@
 	<title>Sushi JS</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width">
+	<link rel="stylesheet" href="./lib/bootstrap/dist/css/bootstrap.min.css" />
+	<style type="text/css">
+		body {
+		}
+		.display {
+			height: 700px;
+			padding: 20px;
+			border: 1px #CCC solid;
+			border-radius: 5px;
+			overflow: scroll;
+		}
+	</style>
 </head>
 
-<body>
-	<div class="">
+<body class="container">
+	<h1>Sushi demo</h1>
+	<div class="row">
+		<div class="col-sm-6">
+			<h2>Data</h2>
+			<pre class="display" id="content-data"></pre>
+		</div>
+		<div class="col-sm-6">
+			<h2>Result</h2>
+			<pre class="display" id="content-result"></pre>
+		</div>
 	</div>
+	</body>
 </body>
-<script src="../bower_components/jquery/dist/jquery.min.js"></script>
-<script src="../src/sushi.js"></script>
-<script src="js/demo.js"></script>
+<script src="./lib/jquery/dist/jquery.min.js"></script>
+<script src="../dist/sushi.js"></script>
+<script src="./js/demo.js"></script>
 </html>
