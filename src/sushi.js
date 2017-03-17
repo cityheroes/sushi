@@ -1,16 +1,16 @@
 
 import Cheff from './Cheff';
 import Helper from './Helper';
-import coreFilters from './CoreProcesses/filters';
-import corePickers from './CoreProcesses/pickers';
-import coreMappers from './CoreProcesses/mappers';
-import coreReducers from './CoreProcesses/reducers';
+import coreFilters from './CoreOperations/filters';
+import coreMappers from './CoreOperations/mappers';
+import coreSelectors from './CoreOperations/selectors';
+import coreReducers from './CoreOperations/reducers';
 import tools from './Tools';
 
-const processesStore = {
+var operationsStore = {
 	filters: coreFilters,
-	pickers: corePickers,
 	mappers: coreMappers,
+	selectors: coreSelectors,
 	reducers: coreReducers,
 };
 
@@ -29,23 +29,22 @@ const applyStep = (collection, step) => {
 	step = step || {};
 
 	collection = step.overturn ? Cheff.overturn(collection, step.overturn) : collection;
-	collection = step.filters ? Cheff.filter(collection, step.filters, applyProcess) : collection;
-	collection = step.pickers ? Cheff.pick(collection, step.pickers, applyProcess) : collection;
-	collection = step.mappers ? Cheff.map(collection, step.mappers, applyProcess) : collection;
-	collection = step.reducers ? [Cheff.reduce(collection, step.reducers, applyProcess)] : collection;
+	collection = step.filters ? Cheff.filter(collection, step.filters, applyOperation) : collection;
+	collection = step.pick ? Cheff.pick(collection, step.pick) : collection;
+	collection = step.mappers ? Cheff.map(collection, step.mappers, applyOperation) : collection;
+	collection = step.selectors ? Cheff.select(collection, step.selectors, applyOperation) : collection;
+	collection = step.reducers ? [Cheff.reduce(collection, step.reducers, applyOperation)] : collection;
 
 	return collection;
 };
 
-const applyProcess = (type, name, ...rest) => {
-	if (processesStore[type + 's'][name]) {
+const applyOperation = (type, name, ...rest) => {
 
-		rest.push(Helper);
-
-		return processesStore[type + 's'][name].apply(undefined, rest);
-	} else {
-		return notFound(type, name);
+	if (operationsStore[type + 's'][name]) {
+		return operationsStore[type + 's'][name].apply(undefined, rest);
 	}
+
+	return notFound(type, name);
 };
 
 const notFound = (type, name) => {
@@ -53,7 +52,7 @@ const notFound = (type, name) => {
 	return false;
 };
 
-const invalidProcess = (type, name) => {
+const invalidOperation = (type, name) => {
 	console.warn(type + ' is not a valid process type.');
 	return false;
 };
@@ -61,38 +60,38 @@ const invalidProcess = (type, name) => {
 // Cannot use 'export default' for compatibility issues
 module.exports = class Sushi  {
 
-	addProcessesBundle (processesBundle) {
-		this.addProcesses('filter', processesBundle.filters);
-		this.addProcesses('picker', processesBundle.pickers);
-		this.addProcesses('mapper', processesBundle.mappers);
-		this.addProcesses('reducer', processesBundle.reducers);
+	addOperationsBundle (processesBundle) {
+		this.addOperations('filter', processesBundle.filters);
+		this.addOperations('picker', processesBundle.pickers);
+		this.addOperations('mapper', processesBundle.mappers);
+		this.addOperations('reducer', processesBundle.reducers);
 	}
 
-	addProcesses (type, processes) {
+	addOperations (type, processes) {
 		for (var name in processes) {
-			this.addProcess(type, name, processes[name]);
+			this.addOperation(type, name, processes[name]);
 		}
 	}
 
-	addProcess (type, name, method) {
+	addOperation (type, name, method) {
 
 		if (!type) {
-			return invalidProcess();
+			return invalidOperation();
 		}
 
-		processesStore[type + 's'][name] = method;
+		operationsStore[type + 's'][name] = method;
 	}
 
 	addFilter (name, method) {
-		this.addProcess('filter', name, method);
+		this.addOperation('filter', name, method);
 	}
 
 	addMapper (name, method) {
-		this.addProcess('mapper', name, method);
+		this.addOperation('mapper', name, method);
 	}
 
 	addReducer (name, method) {
-		this.addProcess('reducer', name, method);
+		this.addOperation('reducer', name, method);
 	}
 
 	cook (collection, recipe, parameters) {
@@ -115,6 +114,10 @@ module.exports = class Sushi  {
 		return collection;
 	}
 
+	helper () {
+		return Helper;
+	}
+
 	// _expand (obj, expanders) {
 	// 	var that = this;
 	// 	return Object.keys(obj).map((key) => {
@@ -126,7 +129,7 @@ module.exports = class Sushi  {
 	// }
 
 	// _applyExpander (expander, item) {
-	// 	return processesStore.expanders[expander.name] ? processesStore.expanders[expander.name](item, expander, Helper) : notFound('expander', expander.name);
+	// 	return operationsStore.expanders[expander.name] ? operationsStore.expanders[expander.name](item, expander, Helper) : notFound('expander', expander.name);
 	// }
 
 };

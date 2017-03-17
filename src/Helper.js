@@ -4,12 +4,7 @@ const parsePath = (pathParam) => {
 	return !tools.isArray(pathParam) ? [pathParam] : pathParam;
 };
 
-const extract = (obj, path, defaultValue) => {
-
-	if (tools.isArray(path)) {
-		defaultValue = path[1];
-		path = path[0];
-	}
+const get = (obj, path, defaultValue) => {
 
 	var arr = path.split('.');
 
@@ -31,10 +26,113 @@ const extract = (obj, path, defaultValue) => {
 	return obj || defaultValue;
 };
 
+/**
+ * @todo Enable same path options as get().
+ */
+const set = (obj, path, value) => {
+
+	path = path.split('.');
+
+	var nested = obj,
+			key,
+			index = -1,
+			length = path.length,
+			lastIndex = length - 1
+	;
+
+	while (nested !== null && ++index < length) {
+
+		key = path[index];
+
+		if (index === lastIndex) {
+			nested[key] = value;
+		} else {
+			nested[key] = typeof nested[key] !== 'undefined' ? nested[key] : {};
+		}
+
+		nested = nested[key];
+	}
+
+	return obj;
+};
+
 const extractMap = (item, paths, defaultValue) => {
 	return parsePath(paths).map((path) => {
-		return extract(item, path, defaultValue);
+		return get(item, path, defaultValue);
 	});
+};
+
+const iterateMap = (item, paths, defaultValue, callback) => {
+	parsePath(paths).forEach((path) => {
+		callback(path, get(item, path, defaultValue));
+	});
+};
+
+const evalKeys = (keys, value) => {
+	keys = tools.isArray(keys) ? keys : [keys];
+
+	return keys.reduce((previousValidation, key) => {
+		let wildcardPosition = key.indexOf('*');
+		let result;
+
+		if (wildcardPosition === 0) {
+			key = key.substr(1);
+			result = value.endsWith(key);
+		} else if (wildcardPosition === (key.length - 1)) {
+			key = key.slice(0, -1);
+			result = value.startsWith(key);
+		} else if (key.charAt(0) === '!') {
+			result = !value.includes(key);
+		} else {
+			result = value.includes(key);
+		}
+
+		return previousValidation || result;
+	}, false);
+
+};
+
+const extractKeys = (item, operationKeys, callback) => {
+	let result = [];
+	Object.keys(item).forEach((key) => {
+		if (evalKeys(operationKeys, key)) {
+			result.push(item[key]);
+		}
+	});
+	return result;
+};
+
+const getKeys = (item, operationKeys, callback) => {
+	return Object.keys(item).filter((key) => {
+		return evalKeys(operationKeys, key);
+	});
+};
+
+const iterateKeys = (item, operationKeys, callback) => {
+	Object.keys(item).forEach((key) => {
+		if (evalKeys(operationKeys, key)) {
+			callback(key);
+		}
+	});
+};
+
+const evalValue = (value, subject) => {
+
+	if (tools.isArray(subject) || tools.isObject(subject)) {
+		return false;
+	}
+
+	if (value.charAt(0) === '!') {
+		return !subject.includes(value.substr(1));
+	} else {
+		return subject.includes(value);
+	}
+};
+
+const evalValues = (values, subject) => {
+	return values.reduce((previousValidation, value) => {
+		return previousValidation || evalValue(value, subject);
+	}, false);
 };
 
 const compare = (lvalue, rvalue, operator) => {
@@ -85,6 +183,7 @@ const calculate = (operands, operator) => {
 	};
 
 	return operands.reduce((memo, value) => {
+		value = value === null || value === undefined ? 0 : value;
 		return operators[operator].method(
 			parseFloat(value) || operators[operator].neutral,
 			memo
@@ -92,10 +191,23 @@ const calculate = (operands, operator) => {
 	}, operators[operator].neutral);
 };
 
+const average = (values) => {
+	return calculate(
+		values,
+		'addition'
+	) / values.length;
+};
+
 export default {
-	parsePath: parsePath,
-	extract: extract,
+	get: get,
+	set: set,
 	extractMap: extractMap,
+	iterateMap: iterateMap,
+	extractKeys: extractKeys,
+	getKeys: getKeys,
+	iterateKeys: iterateKeys,
+	evalValues: evalValues,
 	compare: compare,
-	calculate: calculate
+	calculate: calculate,
+	average: average
 };

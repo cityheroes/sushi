@@ -1,6 +1,8 @@
 import tools from './Tools';
+import Helper from './Helper';
 
-const overturnProcess = (collection, item, pivot, dest) => {
+// Uni operations
+const overturnOperation = (collection, item, pivot, dest) => {
 	var parent = tools.omit(item, pivot);
 	let child = item[pivot];
 
@@ -32,11 +34,36 @@ const overturn = (collection, overturn) => {
 	;
 
 	return collection.reduce((reducedItems, item) => {
-		return overturnProcess(reducedItems, item, pivot, dest);
+		return overturnOperation(reducedItems, item, pivot, dest);
 	}, []);
 };
 
-const filter = (collection, filters, applyProcess) => {
+const pick = (collection, pick) => {
+
+	return collection.map((item) => {
+
+		let resultItem = {};
+
+		if (pick.keys) {
+			Helper.iterateKeys(item, pick.keys, (key) => {
+				if ((pick.values && Helper.evalValues(pick.values, item[key])) || !pick.values) {
+					resultItem[key] = item[key];
+				}
+			});
+		}
+
+		if (pick.paths) {
+			Helper.iterateMap(item, pick.paths, null, (path, value) => {
+				resultItem = Helper.set(resultItem, path, value);
+			});
+		}
+
+		return resultItem;
+	});
+};
+
+// Multi operations
+const filter = (collection, filters, applyOperation) => {
 
 	if (!filters || filters.length === 0) {
 		return collection;
@@ -44,60 +71,54 @@ const filter = (collection, filters, applyProcess) => {
 
 	return collection.filter((item) => {
 		return filters.reduce((previousResult, filter) => {
-			return previousResult && applyProcess('filter', filter.name, item, filter);
+			return previousResult && applyOperation('filter', filter.name, item, filter);
 		}, true);
 	});
 };
 
-const pick = (collection, pickers, applyProcess) => {
-
-	if (!pickers || pickers.length === 0) {
-		return collection;
-	}
-
-	return collection.map((item) => {
-		return Object.keys(item).reduce((pickedItem, key) => {
-			pickers.forEach((picker) => {
-				if (applyProcess('picker', picker.name, key, picker)) {
-					pickedItem[key] = item[key];
-				}
-			});
-			return pickedItem;
-		}, {});
-	});
-};
-
-const map = (collection, mappers, applyProcess) => {
+const map = (collection, mappers, applyOperation) => {
 
 	if (!mappers || mappers.length === 0) {
 		return collection;
 	}
 
 	return collection.map((item) => {
-		return mappers.reduce((mappedItem, mapper) => {
-			if (mapper.dest) {
-				mappedItem[mapper.dest] = applyProcess('mapper', mapper.name, item, mapper);
-				return mappedItem;
-			} else {
-				return Object.assign(
-					mappedItem,
-					applyProcess('mapper', mapper.name, item, mapper)
-				);
-			}
+		mappers.forEach((mapper) => {
+
+			Helper.iterateKeys(item, mapper.keys, (key) => {
+				item[key] = applyOperation('mapper', mapper.name, item[key], mapper);
+			});
+
+		}, {});
+
+		return item;
+	});
+};
+
+const select = (collection, selectors, applyOperation) => {
+
+	if (!selectors || selectors.length === 0) {
+		return collection;
+	}
+
+	return collection.map((item) => {
+		return selectors.reduce((resultItem, selector) => {
+			resultItem[selector.dest] = applyOperation('selector', selector.name, item, selector);
+			return resultItem;
 		}, {});
 	});
 };
 
-const reduce = (collection, reducers, applyProcess) => {
+const reduce = (collection, reducers, applyOperation) => {
 
 	if (!reducers || reducers.length === 0) {
 		return collection;
 	}
 
-	return reducers.reduce((mappedItem, reducer, applyProcess) => {
+	return reducers.reduce((mappedItem, reducer) => {
 
 		mappedItem[reducer.dest] = collection.reduce((memo, item) => {
-			return applyProcess('reducer', reducer.name, item, reducer, memo);
+			return applyOperation('reducer', reducer.name, item, reducer, memo);
 		}, (reducer.start || 0));
 
 		return mappedItem;
@@ -110,5 +131,6 @@ export default {
 	filter: filter,
 	pick: pick,
 	map: map,
+	select: select,
 	reduce: reduce,
 };
