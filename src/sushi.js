@@ -32,6 +32,7 @@ const applyStep = (collection, step) => {
 	collection = step.filters ? Cheff.filter(collection, step.filters, applyOperation) : collection;
 	collection = step.pick ? Cheff.pick(collection, step.pick) : collection;
 	collection = step.mappers ? Cheff.map(collection, step.mappers, applyOperation) : collection;
+	collection = step.explode ? Cheff.explode(collection, step.explode) : collection;
 	collection = step.selectors ? Cheff.select(collection, step.selectors, applyOperation) : collection;
 	collection = step.reducers ? [Cheff.reduce(collection, step.reducers, applyOperation)] : collection;
 

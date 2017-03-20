@@ -1,48 +1,48 @@
+import tools from '../Tools';
 import Helper from '../Helper';
 
 export default {
 
-	total: (item, reducer, previousValue) => {
+	total: (reducer, previousValue, value) => {
 		return previousValue + 1;
 	},
 
-	count: (item, reducer, previousValue) => {
-		var value = Helper.get(item, reducer.path);
+	count: (reducer, previousValue, value) => {
 		return value ? previousValue + 1 : previousValue;
 	},
 
-	countCompare: (item, reducer, previousValue) => {
+	countCompare: (reducer, previousValue, value) => {
 		return Helper.compare(
-			Helper.get(item, reducer.path),
+			Helper.get(reducer.path),
 			reducer.match,
 			reducer.operator
 		) ? previousValue + 1 : previousValue;
 	},
 
-	operation: (item, reducer, previousValue) => {
+	operation: (reducer, previousValue, value) => {
 		return Helper.calculate(
-			[Helper.get(item, reducer.path), previousValue],
+			[value, previousValue],
 			reducer.operator
 		);
 	},
 
-	average: (item, reducer, previousValue) => {
+	average: (reducer, previousValue, value) => {
 		return Helper.average(
-			[Helper.get(item, reducer.path), previousValue],
+			[value, previousValue],
 			reducer.operator
 		);
 	},
 
-	sum: (item, reducer, previousValue) => {
+	sum: (reducer, previousValue, value) => {
 		return Helper.calculate(
-			[Helper.get(item, reducer.path), previousValue],
+			[value, previousValue],
 			'addition'
 		);
 	},
 
-	sumAndOperation: (item, reducer, previousValue) => {
+	sumAndOperation: (reducer, previousValue, value) => {
 		var sum = Helper.calculate(
-			[Helper.get(item, reducer.path), previousValue],
+			[value, previousValue],
 			'addition'
 		);
 
@@ -50,6 +50,12 @@ export default {
 			[sum, reducer.operand],
 			reducer.operator
 		);
+	},
+
+	array: (reducer, previousValue, value) => {
+		previousValue = tools.isArray(previousValue) ? previousValue : [];
+		previousValue.push(value);
+		return previousValue;
 	},
 
 };

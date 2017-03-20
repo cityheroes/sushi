@@ -68,23 +68,33 @@ const iterateMap = (item, paths, defaultValue, callback) => {
 	});
 };
 
+const wildcardSeparator = '*';
+
 const evalKeys = (keys, value) => {
+
+	if (!keys) {
+		return true;
+	}
+
 	keys = tools.isArray(keys) ? keys : [keys];
 
 	return keys.reduce((previousValidation, key) => {
-		let wildcardPosition = key.indexOf('*');
-		let result;
+		let result = false;
+		let firstWildcard = key.indexOf(wildcardSeparator);
 
-		if (wildcardPosition === 0) {
-			key = key.substr(1);
-			result = value.endsWith(key);
-		} else if (wildcardPosition === (key.length - 1)) {
-			key = key.slice(0, -1);
-			result = value.startsWith(key);
-		} else if (key.charAt(0) === '!') {
-			result = !value.includes(key);
+		if (firstWildcard !== -1) {
+
+			let lastWildcard = key.lastIndexOf(wildcardSeparator);
+
+			if (lastWildcard !== -1 && firstWildcard !== lastWildcard) {
+				result = value.includes(key.substring(firstWildcard + 1, lastWildcard));
+			} else if (firstWildcard === 0) {
+				result = value.endsWith(key.substr(1));
+			} else if (firstWildcard === (key.length - 1)) {
+				result = value.startsWith(key.slice(0, -1));
+			}
 		} else {
-			result = value.includes(key);
+			result = value === key;
 		}
 
 		return previousValidation || result;
@@ -93,13 +103,9 @@ const evalKeys = (keys, value) => {
 };
 
 const extractKeys = (item, operationKeys, callback) => {
-	let result = [];
-	Object.keys(item).forEach((key) => {
-		if (evalKeys(operationKeys, key)) {
-			result.push(item[key]);
-		}
+	return Object.keys(item).filter((key) => {
+		return evalKeys(operationKeys, key);
 	});
-	return result;
 };
 
 const getKeys = (item, operationKeys, callback) => {
@@ -140,12 +146,12 @@ const compare = (lvalue, rvalue, operator) => {
 	operator = operator || 'eq';
 
 	let operators = {
-		'eq':      (l, r) => { return l === r; },
-		'ne':      (l, r) => { return l !== r; },
-		'lt':        (l, r) => { return l < r; },
-		'gt':        (l, r) => { return l > r; },
-		'le':       (l, r) => { return l <= r; },
-		'ge':       (l, r) => { return l >= r; },
+		'eq': (l, r) => { return l === r; },
+		'ne': (l, r) => { return l !== r; },
+		'lt': (l, r) => { return l < r; },
+		'gt': (l, r) => { return l > r; },
+		'le': (l, r) => { return l <= r; },
+		'ge': (l, r) => { return l >= r; },
 	};
 
 	return operators[operator](lvalue, rvalue);
@@ -198,6 +204,21 @@ const average = (values) => {
 	) / values.length;
 };
 
+const compareString = (lvalue, rvalue, operator) => {
+
+	operator = operator || 'eq';
+
+	let operators = {
+		'eq': (l, r) => { return l === r; },
+		'ne': (l, r) => { return l !== r; },
+		'includes': (l, r) => { return l.includes(r); },
+		'startsWith': (l, r) => { return l.startsWith(r); },
+		'endsWith': (l, r) => { return l.endsWith(r); },
+	};
+
+	return operators[operator](lvalue, rvalue);
+};
+
 export default {
 	get: get,
 	set: set,
@@ -209,5 +230,6 @@ export default {
 	evalValues: evalValues,
 	compare: compare,
 	calculate: calculate,
-	average: average
+	average: average,
+	compareString: compareString
 };

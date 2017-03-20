@@ -160,23 +160,33 @@ var iterateMap = function iterateMap(item, paths, defaultValue, callback) {
 	});
 };
 
+var wildcardSeparator = '*';
+
 var evalKeys = function evalKeys(keys, value) {
+
+	if (!keys) {
+		return true;
+	}
+
 	keys = _Tools2.default.isArray(keys) ? keys : [keys];
 
 	return keys.reduce(function (previousValidation, key) {
-		var wildcardPosition = key.indexOf('*');
-		var result = void 0;
+		var result = false;
+		var firstWildcard = key.indexOf(wildcardSeparator);
 
-		if (wildcardPosition === 0) {
-			key = key.substr(1);
-			result = value.endsWith(key);
-		} else if (wildcardPosition === key.length - 1) {
-			key = key.slice(0, -1);
-			result = value.startsWith(key);
-		} else if (key.charAt(0) === '!') {
-			result = !value.includes(key);
+		if (firstWildcard !== -1) {
+
+			var lastWildcard = key.lastIndexOf(wildcardSeparator);
+
+			if (lastWildcard !== -1 && firstWildcard !== lastWildcard) {
+				result = value.includes(key.substring(firstWildcard + 1, lastWildcard));
+			} else if (firstWildcard === 0) {
+				result = value.endsWith(key.substr(1));
+			} else if (firstWildcard === key.length - 1) {
+				result = value.startsWith(key.slice(0, -1));
+			}
 		} else {
-			result = value.includes(key);
+			result = value === key;
 		}
 
 		return previousValidation || result;
@@ -184,13 +194,9 @@ var evalKeys = function evalKeys(keys, value) {
 };
 
 var extractKeys = function extractKeys(item, operationKeys, callback) {
-	var result = [];
-	Object.keys(item).forEach(function (key) {
-		if (evalKeys(operationKeys, key)) {
-			result.push(item[key]);
-		}
+	return Object.keys(item).filter(function (key) {
+		return evalKeys(operationKeys, key);
 	});
-	return result;
 };
 
 var getKeys = function getKeys(item, operationKeys, callback) {
@@ -295,6 +301,31 @@ var average = function average(values) {
 	return calculate(values, 'addition') / values.length;
 };
 
+var compareString = function compareString(lvalue, rvalue, operator) {
+
+	operator = operator || 'eq';
+
+	var operators = {
+		'eq': function eq(l, r) {
+			return l === r;
+		},
+		'ne': function ne(l, r) {
+			return l !== r;
+		},
+		'includes': function includes(l, r) {
+			return l.includes(r);
+		},
+		'startsWith': function startsWith(l, r) {
+			return l.startsWith(r);
+		},
+		'endsWith': function endsWith(l, r) {
+			return l.endsWith(r);
+		}
+	};
+
+	return operators[operator](lvalue, rvalue);
+};
+
 exports.default = {
 	get: get,
 	set: set,
@@ -306,7 +337,8 @@ exports.default = {
 	evalValues: evalValues,
 	compare: compare,
 	calculate: calculate,
-	average: average
+	average: average,
+	compareString: compareString
 };
 
 /***/ }),
@@ -418,7 +450,9 @@ var pick = function pick(collection, _pick) {
 
 		if (_pick.keys) {
 			_Helper2.default.iterateKeys(item, _pick.keys, function (key) {
-				if (_pick.values && _Helper2.default.evalValues(_pick.values, item[key]) || !_pick.values) {
+				if (_pick.values && _Helper2.default.evalValues(_pick.values, item[key])) {
+					resultItem[key] = item[key];
+				} else if (!_pick.values) {
 					resultItem[key] = item[key];
 				}
 			});
@@ -466,6 +500,30 @@ var map = function map(collection, mappers, applyOperation) {
 	});
 };
 
+var explode = function explode(collection, _explode) {
+	return collection.reduce(function (resultCollection, item) {
+		return resultCollection.concat(Object.keys(item).reduce(function (explodedItem, key) {
+
+			var resultItem = {};
+
+			if (_explode.id) {
+				if (_explode.id.includes(key)) {
+					return explodedItem;
+				}
+
+				resultItem.id = _Helper2.default.get(item, _explode.id);
+			}
+
+			resultItem[_explode.key ? _explode.key : 'key'] = key;
+			resultItem[_explode.value ? _explode.value : 'value'] = item[key];
+
+			explodedItem.push(resultItem);
+
+			return explodedItem;
+		}, []));
+	}, []);
+};
+
 var select = function select(collection, selectors, applyOperation) {
 
 	if (!selectors || selectors.length === 0) {
@@ -486,13 +544,26 @@ var reduce = function reduce(collection, reducers, applyOperation) {
 		return collection;
 	}
 
-	return reducers.reduce(function (mappedItem, reducer) {
+	return reducers.reduce(function (resultItem, reducer) {
 
-		mappedItem[reducer.dest] = collection.reduce(function (memo, item) {
-			return applyOperation('reducer', reducer.name, item, reducer, memo);
-		}, reducer.start || 0);
+		var start = reducer.start || 0;
 
-		return mappedItem;
+		if (reducer.dest && reducer.path) {
+			resultItem[reducer.dest] = collection.reduce(function (memo, item) {
+
+				return applyOperation('reducer', reducer.name, reducer, memo, _Helper2.default.get(item, reducer.path));
+			}, start);
+		} else if (reducer.keys) {
+
+			collection.forEach(function (item) {
+				_Helper2.default.iterateKeys(item, reducer.keys, function (key) {
+
+					resultItem[key] = applyOperation('reducer', reducer.name, reducer, resultItem[key] || start, item[key]);
+				});
+			});
+		}
+
+		return resultItem;
 	}, {});
 };
 
@@ -502,6 +573,7 @@ exports.default = {
 	filter: filter,
 	pick: pick,
 	map: map,
+	explode: explode,
 	select: select,
 	reduce: reduce
 };
@@ -571,10 +643,40 @@ exports.default = {
 		return value;
 	},
 
+	replace: function replace(value, mapper) {
+		console.log(value);
+
+		if (typeof value !== 'string') {
+			return value;
+		}
+
+		var replacer = mapper.match || '';
+
+		if (mapper.regex) {
+			replacer = new RegExp(mapper.regex, 'i');
+		}
+
+		return value.replace(replacer, mapper.replacement || '');
+	},
+
+	substring: function substring(value, mapper) {
+
+		if (typeof value !== 'string') {
+			return value;
+		}
+
+		return value.substring(mapper.start || 0, mapper.end || undefined);
+	},
+
 	translate: function translate(value, mapper) {
-		var translations = mapper.translations || {};
-		var result = typeof translations[value] !== 'undefined' ? translations[value] : value;
-		return result;
+		var convertions = mapper.convertions || {};
+		return typeof convertions[value] !== 'undefined' ? convertions[value] : value;
+	},
+
+	classify: function classify(value, mapper) {
+		var convertions = mapper.convertions || {};
+		var roundedValue = Math.round(value);
+		return typeof convertions[roundedValue] !== 'undefined' ? convertions[roundedValue] : value;
 	}
 
 };
@@ -591,6 +693,10 @@ Object.defineProperty(exports, "__esModule", {
 	value: true
 });
 
+var _Tools = __webpack_require__(1);
+
+var _Tools2 = _interopRequireDefault(_Tools);
+
 var _Helper = __webpack_require__(0);
 
 var _Helper2 = _interopRequireDefault(_Helper);
@@ -599,35 +705,40 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 exports.default = {
 
-	total: function total(item, reducer, previousValue) {
+	total: function total(reducer, previousValue, value) {
 		return previousValue + 1;
 	},
 
-	count: function count(item, reducer, previousValue) {
-		var value = _Helper2.default.get(item, reducer.path);
+	count: function count(reducer, previousValue, value) {
 		return value ? previousValue + 1 : previousValue;
 	},
 
-	countCompare: function countCompare(item, reducer, previousValue) {
-		return _Helper2.default.compare(_Helper2.default.get(item, reducer.path), reducer.match, reducer.operator) ? previousValue + 1 : previousValue;
+	countCompare: function countCompare(reducer, previousValue, value) {
+		return _Helper2.default.compare(_Helper2.default.get(reducer.path), reducer.match, reducer.operator) ? previousValue + 1 : previousValue;
 	},
 
-	operation: function operation(item, reducer, previousValue) {
-		return _Helper2.default.calculate([_Helper2.default.get(item, reducer.path), previousValue], reducer.operator);
+	operation: function operation(reducer, previousValue, value) {
+		return _Helper2.default.calculate([value, previousValue], reducer.operator);
 	},
 
-	average: function average(item, reducer, previousValue) {
-		return _Helper2.default.average([_Helper2.default.get(item, reducer.path), previousValue], reducer.operator);
+	average: function average(reducer, previousValue, value) {
+		return _Helper2.default.average([value, previousValue], reducer.operator);
 	},
 
-	sum: function sum(item, reducer, previousValue) {
-		return _Helper2.default.calculate([_Helper2.default.get(item, reducer.path), previousValue], 'addition');
+	sum: function sum(reducer, previousValue, value) {
+		return _Helper2.default.calculate([value, previousValue], 'addition');
 	},
 
-	sumAndOperation: function sumAndOperation(item, reducer, previousValue) {
-		var sum = _Helper2.default.calculate([_Helper2.default.get(item, reducer.path), previousValue], 'addition');
+	sumAndOperation: function sumAndOperation(reducer, previousValue, value) {
+		var sum = _Helper2.default.calculate([value, previousValue], 'addition');
 
 		return _Helper2.default.calculate([sum, reducer.operand], reducer.operator);
+	},
+
+	array: function array(reducer, previousValue, value) {
+		previousValue = _Tools2.default.isArray(previousValue) ? previousValue : [];
+		previousValue.push(value);
+		return previousValue;
 	}
 
 };
@@ -762,6 +873,7 @@ var applyStep = function applyStep(collection, step) {
 	collection = step.filters ? _Cheff2.default.filter(collection, step.filters, applyOperation) : collection;
 	collection = step.pick ? _Cheff2.default.pick(collection, step.pick) : collection;
 	collection = step.mappers ? _Cheff2.default.map(collection, step.mappers, applyOperation) : collection;
+	collection = step.explode ? _Cheff2.default.explode(collection, step.explode) : collection;
 	collection = step.selectors ? _Cheff2.default.select(collection, step.selectors, applyOperation) : collection;
 	collection = step.reducers ? [_Cheff2.default.reduce(collection, step.reducers, applyOperation)] : collection;
 

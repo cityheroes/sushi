@@ -46,7 +46,9 @@ const pick = (collection, pick) => {
 
 		if (pick.keys) {
 			Helper.iterateKeys(item, pick.keys, (key) => {
-				if ((pick.values && Helper.evalValues(pick.values, item[key])) || !pick.values) {
+				if (pick.values && Helper.evalValues(pick.values, item[key])) {
+					resultItem[key] = item[key];
+				} else if (!pick.values) {
 					resultItem[key] = item[key];
 				}
 			});
@@ -95,6 +97,30 @@ const map = (collection, mappers, applyOperation) => {
 	});
 };
 
+const explode = (collection, explode) => {
+	return collection.reduce((resultCollection, item) => {
+		return resultCollection.concat(Object.keys(item).reduce((explodedItem, key) => {
+
+			let resultItem = {};
+
+			if (explode.id) {
+				if (explode.id.includes(key)) {
+					return explodedItem;
+				}
+
+				resultItem.id = Helper.get(item, explode.id);
+			}
+
+			resultItem[(explode.key ? explode.key : 'key')] = key;
+			resultItem[(explode.value ? explode.value : 'value')] = item[key];
+
+			explodedItem.push(resultItem);
+
+			return explodedItem;
+		}, []));
+	}, []);
+};
+
 const select = (collection, selectors, applyOperation) => {
 
 	if (!selectors || selectors.length === 0) {
@@ -115,13 +141,40 @@ const reduce = (collection, reducers, applyOperation) => {
 		return collection;
 	}
 
-	return reducers.reduce((mappedItem, reducer) => {
+	return reducers.reduce((resultItem, reducer) => {
 
-		mappedItem[reducer.dest] = collection.reduce((memo, item) => {
-			return applyOperation('reducer', reducer.name, item, reducer, memo);
-		}, (reducer.start || 0));
+		let start = (reducer.start || 0);
 
-		return mappedItem;
+		if (reducer.dest && reducer.path) {
+			resultItem[reducer.dest] = collection.reduce((memo, item) => {
+
+				return applyOperation(
+					'reducer',
+					reducer.name,
+					reducer,
+					memo,
+					Helper.get(item, reducer.path)
+				);
+
+			}, start);
+		} else if (reducer.keys) {
+
+			collection.forEach((item) => {
+				Helper.iterateKeys(item, reducer.keys, (key) => {
+
+					resultItem[key] = applyOperation(
+						'reducer',
+						reducer.name,
+						reducer,
+						resultItem[key] || start,
+						item[key]
+					);
+
+				});
+			});
+		}
+
+		return resultItem;
 	}, {});
 };
 
@@ -131,6 +184,7 @@ export default {
 	filter: filter,
 	pick: pick,
 	map: map,
+	explode: explode,
 	select: select,
 	reduce: reduce,
 };

@@ -1,107 +1,163 @@
 
 var sushi = new Sushi();
 
-recipe3 = [
-	{
-		filters: [
-			{
-				name: 'match',
-				path: 'mission.id',
-				match: '871'
-			}
-		]
-	},
-	// {
-	// 	selectors: [
-	// 		{
-	// 			name: 'extract',
-	// 			paths: ['parent.created'],
-	// 			dest: 'created'
-	// 		}
-	// 	]
-	// },
+var result23 = [
 	{
 		overturn: {
 			pivot: 'custom'
 		},
 		pick: {
-			values: ['!N/A'],
 			paths: ['parent.created'],
-			keys: ['!OSCAR', 'DOCUMENTATION & SOFT SKILLS -', 'SSHE -', 'SWT / FB COMPETENCE -', 'DAQ / MPFM COMPETENCE -']
+			keys: ['DAQ / MPFM COMPETENCE -']
 		},
 		mappers: [
 			{
 				name: 'translate',
-				translations: {
-					'A': 1,
-					'B': 2,
+				convertions: {
+					'A': 5,
+					'B': 4,
 					'C': 3,
-					'D': 4,
-					'E': 5,
-					'F': 6,
-					null: 0,
-				},
-				keys: ['DOCUMENTATION & SOFT SKILLS -', 'SSHE -*', 'SWT / FB COMPETENCE -*', 'DAQ / MPFM COMPETENCE -*']
+					'D': 2,
+					'E': 1,
+					'N/A': 0,
+				}
 			}
 		],
 		selectors: [
-			{
-				name: 'extract',
-				path: 'parent.created',
-				dest: 'created',
-			},
-			{
-				name: 'average',
-				keys: ['DOCUMENTATION & SOFT SKILLS -'],
-				dest: 'DOCUMENTATION & SOFT SKILLS',
-			},
-			{
-				name: 'average',
-				keys: ['SSHE -'],
-				dest: 'SSHE',
-			},
-			{
-				name: 'average',
-				keys: ['SWT / FB COMPETENCE -'],
-				dest: 'SWT / FB COMPETENCE',
-			},
 			{
 				name: 'average',
 				keys: ['DAQ / MPFM COMPETENCE -'],
 				dest: 'DAQ / MPFM COMPETENCE',
 			},
+			{
+				name: 'extract',
+				path: 'parent.created',
+				dest: 'created',
+			}
+		]
+	},
+	{
+		mappers: [
+			{
+				name: 'classify',
+				convertions: {
+					5: 'A - Excellent',
+					4: 'B - Good',
+					3: 'C - Satisfactory',
+					2: 'D - Deficient',
+					1: 'E - Not Acceptable',
+					0: 'N / A'
+				},
+			}
+		]
+	},
+	{
+		filters: [
+			{
+				name: 'mismatch',
+				path: 'DAQ / MPFM COMPETENCE',
+				match: 'N / A'
+			}
+		]
+	}
+];
+
+var recipe3 = [
+	{
+		overturn: {
+			pivot: 'custom'
+		},
+		pick: {
+			paths: ['parent.id'],
+			keys: ['DOCUMENTATION & SOFT SKILLS -*']
+		},
+		mappers: [
+			{
+				name: 'translate',
+				convertions: {
+					'A': 5,
+					'B': 4,
+					'C': 3,
+					'D': 2,
+					'E': 1,
+					'N/A': 0,
+				},
+				keys: ['DOCUMENTATION & SOFT SKILLS -*'],
+			}
+		],
+		// selectors: [
+		// 	{
+		// 		name: 'average',
+		// 		keys: ['DOCUMENTATION & SOFT SKILLS -*'],
+		// 		dest: 'DOCUMENTATION & SOFT SKILLS',
+		// 	},
+		// 	{
+		// 		name: 'extract',
+		// 		path: 'parent.created',
+		// 		dest: 'created',
+		// 	}
+		// ]
+	},
+	{
+		mappersz: [
+			{
+				name: 'classify',
+				convertions: {
+					5: 'A - Excellent',
+					4: 'B - Good',
+					3: 'C - Satisfactory',
+					2: 'D - Deficient',
+					1: 'E - Not Acceptable',
+					// 0: 'N / A'
+				},
+				keys: ['DOCUMENTATION & SOFT SKILLS -*'],
+			}
+		],
+		// explode: {
+		// 	id: 'parent.id'
+		// 	// name: 'sell'
+		// }
+	},
+	{
+		filters: [
+			{
+				name: 'mismatch',
+				path: 'DOCUMENTATION & SOFT SKILLS',
+				match: 'N / A'
+			}
 		],
 		reducers: [
 			{
 				name: 'average',
-				path: 'DOCUMENTATION & SOFT SKILLS',
-				dest: 'DOCUMENTATION & SOFT SKILLS',
-			},
-			{
-				name: 'average',
-				path: 'SSHE',
-				dest: 'SSHE',
-			},
-			{
-				name: 'average',
-				path: 'SWT / FB COMPETENCE',
-				dest: 'SWT / FB COMPETENCE',
-			},
-			{
-				name: 'average',
-				path: 'DAQ / MPFM COMPETENCE',
-				dest: 'DAQ / MPFM COMPETENCE',
-			},
+				keys: ['DOCUMENTATION & SOFT SKILLS -*']
+			}
 		]
 	},
-	// {
-	// 	mappers: {
-	// 		{
-
-	// 			values: ['!null']
-	// 		}
-	// 	}
-	// }
+	{
+		explode: {},
+	},
+	{
+		mappers: [
+			{
+				name: 'replace',
+				match: 'DOCUMENTATION & SOFT SKILLS - ',
+				path: 'key'
+			}
+		],
+		reducers: [
+			{
+				name: 'array',
+				keys: ['key', 'value']
+				// path: 'key',
+				// dest: 'keys',
+			},
+			// {
+			// 	name: 'array',
+			// 	path: 'value',
+			// 	dest: 'values'
+			// }
+		]
+	}
 ];
 
 recipe4 = [
@@ -132,7 +188,7 @@ $(document).ready(function() {
 	var dataContent = $('#content-data');
 	var resultContent = $('#content-result');
 
-	$.getJSON('./js/data2.json', function(data) {
+	$.getJSON('./js/data3.json', function(data) {
 		data = data.data;
 
 		dataContent.html(
@@ -148,12 +204,15 @@ $(document).ready(function() {
 		// var result1 = sushi.cook(data, recipe1);
 		// var result2 = sushi.cook(result1, recipe2);
 		var result3 = sushi.cook(data, recipe3);
-		var result4 = sushi.cook(data, recipe4);
+		// var result4 = sushi.cook(data, recipe4);
 		resultContent.html(
+
 			result3.length + '\n\n' +
-			JSON.stringify(result3, null, 3) + '\n\n' +
-			result4.length + '\n\n' +
-			JSON.stringify(result4, null, 3) + '\n\n'
+			JSON.stringify(result3, null, 3) + '\n\n'
+
+			// result4.length + '\n\n' +
+			// JSON.stringify(result4, null, 3) + '\n\n'
+
 			// JSON.stringify(result1, null, 3) + '\n\n' +
 			// JSON.stringify(result2, null, 3)
 		);
