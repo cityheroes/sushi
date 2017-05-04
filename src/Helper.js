@@ -102,13 +102,19 @@ const evalKeys = (keys, value) => {
 
 };
 
-const extractKeys = (item, operationKeys, callback) => {
+const extractKeys = (item, operationKeys) => {
 	return Object.keys(item).filter((key) => {
 		return evalKeys(operationKeys, key);
 	});
 };
 
-const getKeys = (item, operationKeys, callback) => {
+const extractKeyValues = (item, operationKeys) => {
+	return extractKeys(item, operationKeys).map((key) => {
+		return item[key];
+	});
+};
+
+const getKeys = (item, operationKeys) => {
 	return Object.keys(item).filter((key) => {
 		return evalKeys(operationKeys, key);
 	});
@@ -154,7 +160,7 @@ const compare = (lvalue, rvalue, operator) => {
 		'ge': (l, r) => { return l >= r; },
 	};
 
-	return operators[operator](lvalue, rvalue);
+	return operators[operator] ? operators[operator](lvalue, rvalue) : null;
 };
 
 const calculate = (operands, operator) => {
@@ -198,6 +204,15 @@ const calculate = (operands, operator) => {
 };
 
 const average = (values) => {
+
+	values = values.filter((value) => {
+		return value !== null && value !== undefined;
+	});
+
+	if (values.length === 0) {
+		return 0;
+	}
+
 	return calculate(
 		values,
 		'addition'
@@ -225,6 +240,7 @@ export default {
 	extractMap: extractMap,
 	iterateMap: iterateMap,
 	extractKeys: extractKeys,
+	extractKeyValues: extractKeyValues,
 	getKeys: getKeys,
 	iterateKeys: iterateKeys,
 	evalValues: evalValues,

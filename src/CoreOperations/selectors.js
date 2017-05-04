@@ -18,6 +18,15 @@ export default {
 		}).split(selector.separator || ' ');
 	},
 
+	format: (item, selector) => {
+		return selector.paths.reduce(function(partialFormat, path, index) {
+			return partialFormat.replace(
+				'{' + index + '}',
+				Helper.get(item, path, selector.default)
+			);
+		}, selector.format || '');
+	},
+
 	compare: (item, selector) => {
 		let comparison = Helper.compare(
 			Helper.get(item, selector.path),
@@ -40,7 +49,7 @@ export default {
 			);
 		} else if (selector.keys) {
 			return Helper.calculate(
-				Helper.extractKeys(item, selector.keys),
+				Helper.extractKeyValues(item, selector.keys),
 				selector.operator
 			);
 		} else {
@@ -52,7 +61,7 @@ export default {
 		if (selector.paths) {
 			return Helper.average(Helper.extractMap(item, selector.paths));
 		} else if (selector.keys) {
-			return Helper.average(Helper.extractKeys(item, selector.keys));
+			return Helper.average(Helper.extractKeyValues(item, selector.keys));
 		} else {
 			return 0;
 		}

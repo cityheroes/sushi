@@ -73,7 +73,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 8);
+/******/ 	return __webpack_require__(__webpack_require__.s = 7);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -193,13 +193,19 @@ var evalKeys = function evalKeys(keys, value) {
 	}, false);
 };
 
-var extractKeys = function extractKeys(item, operationKeys, callback) {
+var extractKeys = function extractKeys(item, operationKeys) {
 	return Object.keys(item).filter(function (key) {
 		return evalKeys(operationKeys, key);
 	});
 };
 
-var getKeys = function getKeys(item, operationKeys, callback) {
+var extractKeyValues = function extractKeyValues(item, operationKeys) {
+	return extractKeys(item, operationKeys).map(function (key) {
+		return item[key];
+	});
+};
+
+var getKeys = function getKeys(item, operationKeys) {
 	return Object.keys(item).filter(function (key) {
 		return evalKeys(operationKeys, key);
 	});
@@ -257,7 +263,7 @@ var compare = function compare(lvalue, rvalue, operator) {
 		}
 	};
 
-	return operators[operator](lvalue, rvalue);
+	return operators[operator] ? operators[operator](lvalue, rvalue) : null;
 };
 
 var calculate = function calculate(operands, operator) {
@@ -298,6 +304,15 @@ var calculate = function calculate(operands, operator) {
 };
 
 var average = function average(values) {
+
+	values = values.filter(function (value) {
+		return value !== null && value !== undefined;
+	});
+
+	if (values.length === 0) {
+		return 0;
+	}
+
 	return calculate(values, 'addition') / values.length;
 };
 
@@ -332,6 +347,7 @@ exports.default = {
 	extractMap: extractMap,
 	iterateMap: iterateMap,
 	extractKeys: extractKeys,
+	extractKeyValues: extractKeyValues,
 	getKeys: getKeys,
 	iterateKeys: iterateKeys,
 	evalValues: evalValues,
@@ -468,6 +484,26 @@ var pick = function pick(collection, _pick) {
 	});
 };
 
+var uniq = function uniq(collection, _uniq) {
+
+	var resultCollection = [],
+	    seen = {};
+
+	if (!_uniq || !_uniq.path) {
+		console.warn('A \'path\' parameter must be provided for uniq operation.');
+		return collection;
+	}
+
+	for (var i = collection.length - 1; i >= 0; i--) {
+		if (seen[_Helper2.default.get(collection[i], _uniq.path)] !== 1) {
+			seen[_Helper2.default.get(collection[i], _uniq.path)] = 1;
+			resultCollection.push(collection[i]);
+		}
+	}
+
+	return resultCollection;
+};
+
 // Multi operations
 var filter = function filter(collection, filters, applyOperation) {
 
@@ -478,6 +514,19 @@ var filter = function filter(collection, filters, applyOperation) {
 	return collection.filter(function (item) {
 		return filters.reduce(function (previousResult, filter) {
 			return previousResult && applyOperation('filter', filter.name, item, filter);
+		}, true);
+	});
+};
+
+var sort = function sort(collection, sorters, applyOperation) {
+
+	if (!sorters || sorters.length === 0) {
+		return collection;
+	}
+
+	return collection.sort(function (item) {
+		return sorters.reduce(function (previousResult, sorter) {
+			return previousResult && applyOperation('sorter', sorter.name, item, sorter);
 		}, true);
 	});
 };
@@ -520,6 +569,30 @@ var explode = function explode(collection, _explode) {
 			explodedItem.push(resultItem);
 
 			return explodedItem;
+		}, []));
+	}, []);
+};
+
+var implode = function implode(collection, _implode) {
+	return collection.reduce(function (resultCollection, item) {
+		return resultCollection.concat(Object.keys(item).reduce(function (implodedItem, key) {
+
+			var resultItem = {};
+
+			if (_implode.id) {
+				if (_implode.id.includes(key)) {
+					return implodedItem;
+				}
+
+				resultItem.id = _Helper2.default.get(item, _implode.id);
+			}
+
+			resultItem[_implode.key ? _implode.key : 'key'] = key;
+			resultItem[_implode.value ? _implode.value : 'value'] = item[key];
+
+			implodedItem.push(resultItem);
+
+			return implodedItem;
 		}, []));
 	}, []);
 };
@@ -572,9 +645,11 @@ exports.default = {
 	overturn: overturn,
 	filter: filter,
 	pick: pick,
+	sort: sort,
 	map: map,
 	explode: explode,
 	select: select,
+	uniq: uniq,
 	reduce: reduce
 };
 
@@ -603,6 +678,14 @@ exports.default = {
 
 	mismatch: function mismatch(item, filter) {
 		return _Helper2.default.get(item, filter.path) !== filter.match;
+	},
+
+	includes: function includes(item, filter) {
+		return _Helper2.default.get(item, filter.path).includes(filter.match);
+	},
+
+	excludes: function excludes(item, filter) {
+		return !_Helper2.default.get(item, filter.path).includes(filter.match);
 	},
 
 	compare: function compare(item, filter) {
@@ -644,7 +727,6 @@ exports.default = {
 	},
 
 	replace: function replace(value, mapper) {
-		console.log(value);
 
 		if (typeof value !== 'string') {
 			return value;
@@ -682,8 +764,7 @@ exports.default = {
 };
 
 /***/ }),
-/* 5 */,
-/* 6 */
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -703,30 +784,42 @@ var _Helper2 = _interopRequireDefault(_Helper);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+var matchBehavior = function matchBehavior(reducer, previousValue, value, reduceOperation) {
+	if (reducer.match) {
+		if (reducer.match === value) {
+			return reduceOperation();
+		} else {
+			return previousValue;
+		}
+	} else {
+		return reduceOperation();
+	}
+};
+
 exports.default = {
 
-	total: function total(reducer, previousValue, value) {
-		return previousValue + 1;
-	},
-
 	count: function count(reducer, previousValue, value) {
-		return value ? previousValue + 1 : previousValue;
-	},
-
-	countCompare: function countCompare(reducer, previousValue, value) {
-		return _Helper2.default.compare(_Helper2.default.get(reducer.path), reducer.match, reducer.operator) ? previousValue + 1 : previousValue;
+		return matchBehavior(reducer, previousValue, value, function () {
+			return value ? previousValue + 1 : previousValue;
+		});
 	},
 
 	operation: function operation(reducer, previousValue, value) {
-		return _Helper2.default.calculate([value, previousValue], reducer.operator);
+		return matchBehavior(reducer, previousValue, value, function () {
+			return _Helper2.default.calculate([value, previousValue], reducer.operator);
+		});
 	},
 
 	average: function average(reducer, previousValue, value) {
-		return _Helper2.default.average([value, previousValue], reducer.operator);
+		return matchBehavior(reducer, previousValue, value, function () {
+			return _Helper2.default.average([value, previousValue], reducer.operator);
+		});
 	},
 
 	sum: function sum(reducer, previousValue, value) {
-		return _Helper2.default.calculate([value, previousValue], 'addition');
+		return matchBehavior(reducer, previousValue, value, function () {
+			return _Helper2.default.calculate([value, previousValue], 'addition');
+		});
 	},
 
 	sumAndOperation: function sumAndOperation(reducer, previousValue, value) {
@@ -744,7 +837,7 @@ exports.default = {
 };
 
 /***/ }),
-/* 7 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -778,6 +871,12 @@ exports.default = {
 		}).split(selector.separator || ' ');
 	},
 
+	format: function format(item, selector) {
+		return selector.paths.reduce(function (partialFormat, path, index) {
+			return partialFormat.replace('{' + index + '}', _Helper2.default.get(item, path, selector.default));
+		}, selector.format || '');
+	},
+
 	compare: function compare(item, selector) {
 		var comparison = _Helper2.default.compare(_Helper2.default.get(item, selector.path), selector.match, selector.operator);
 		return comparison ? selector.truth : selector.false;
@@ -789,7 +888,7 @@ exports.default = {
 		} else if (selector.paths) {
 			return _Helper2.default.calculate(_Helper2.default.extractMap(item, selector.paths), selector.operator);
 		} else if (selector.keys) {
-			return _Helper2.default.calculate(_Helper2.default.extractKeys(item, selector.keys), selector.operator);
+			return _Helper2.default.calculate(_Helper2.default.extractKeyValues(item, selector.keys), selector.operator);
 		} else {
 			return 0;
 		}
@@ -799,7 +898,7 @@ exports.default = {
 		if (selector.paths) {
 			return _Helper2.default.average(_Helper2.default.extractMap(item, selector.paths));
 		} else if (selector.keys) {
-			return _Helper2.default.average(_Helper2.default.extractKeys(item, selector.keys));
+			return _Helper2.default.average(_Helper2.default.extractKeyValues(item, selector.keys));
 		} else {
 			return 0;
 		}
@@ -808,13 +907,15 @@ exports.default = {
 };
 
 /***/ }),
-/* 8 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+// import coreSorters from './CoreOperations/sorters';
+
 
 var _Cheff = __webpack_require__(2);
 
@@ -832,11 +933,11 @@ var _mappers = __webpack_require__(4);
 
 var _mappers2 = _interopRequireDefault(_mappers);
 
-var _selectors = __webpack_require__(7);
+var _selectors = __webpack_require__(6);
 
 var _selectors2 = _interopRequireDefault(_selectors);
 
-var _reducers = __webpack_require__(6);
+var _reducers = __webpack_require__(5);
 
 var _reducers2 = _interopRequireDefault(_reducers);
 
@@ -855,26 +956,17 @@ var operationsStore = {
 	reducers: _reducers2.default
 };
 
-var injectParameters = function injectParameters(recipe, parameters) {
-
-	var serializedRecipe = JSON.stringify(recipe);
-
-	for (var parameterName in parameters) {
-		serializedRecipe = serializedRecipe.replace(new RegExp('#' + parameterName + '#', 'g'), parameters[parameterName]);
-	}
-
-	return JSON.parse(serializedRecipe);
-};
-
 var applyStep = function applyStep(collection, step) {
 	step = step || {};
 
 	collection = step.overturn ? _Cheff2.default.overturn(collection, step.overturn) : collection;
 	collection = step.filters ? _Cheff2.default.filter(collection, step.filters, applyOperation) : collection;
 	collection = step.pick ? _Cheff2.default.pick(collection, step.pick) : collection;
+	// collection = step.sorters ? Cheff.sort(collection, step.sorters, applyOperation) : collection;
 	collection = step.mappers ? _Cheff2.default.map(collection, step.mappers, applyOperation) : collection;
 	collection = step.explode ? _Cheff2.default.explode(collection, step.explode) : collection;
 	collection = step.selectors ? _Cheff2.default.select(collection, step.selectors, applyOperation) : collection;
+	collection = step.uniq ? _Cheff2.default.uniq(collection, step.uniq) : collection;
 	collection = step.reducers ? [_Cheff2.default.reduce(collection, step.reducers, applyOperation)] : collection;
 
 	return collection;
@@ -949,6 +1041,18 @@ module.exports = function () {
 			this.addOperation('reducer', name, method);
 		}
 	}, {
+		key: 'applyParameters',
+		value: function applyParameters(recipe, parameters) {
+
+			var serializedRecipe = JSON.stringify(recipe);
+
+			for (var parameterName in parameters) {
+				serializedRecipe = serializedRecipe.replace(new RegExp('#' + parameterName + '#', 'g'), parameters[parameterName]);
+			}
+
+			return JSON.parse(serializedRecipe);
+		}
+	}, {
 		key: 'cook',
 		value: function cook(collection, recipe, parameters) {
 
@@ -959,7 +1063,7 @@ module.exports = function () {
 			}
 
 			if (parameters) {
-				recipe = injectParameters(recipe, parameters);
+				recipe = this.applyParameters(recipe, parameters);
 			}
 
 			var that = this;

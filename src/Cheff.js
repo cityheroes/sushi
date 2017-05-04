@@ -64,6 +64,27 @@ const pick = (collection, pick) => {
 	});
 };
 
+const uniq = (collection, uniq) => {
+
+	let resultCollection = [],
+			seen = {}
+	;
+
+	if (!uniq || !uniq.path) {
+		console.warn('A \'path\' parameter must be provided for uniq operation.');
+		return collection;
+	}
+
+	for (var i = collection.length - 1; i >= 0; i--) {
+		if (seen[Helper.get(collection[i], uniq.path)] !== 1) {
+			seen[Helper.get(collection[i], uniq.path)] = 1;
+			resultCollection.push(collection[i]);
+		}
+	}
+
+	return resultCollection;
+};
+
 // Multi operations
 const filter = (collection, filters, applyOperation) => {
 
@@ -74,6 +95,19 @@ const filter = (collection, filters, applyOperation) => {
 	return collection.filter((item) => {
 		return filters.reduce((previousResult, filter) => {
 			return previousResult && applyOperation('filter', filter.name, item, filter);
+		}, true);
+	});
+};
+
+const sort = (collection, sorters, applyOperation) => {
+
+	if (!sorters || sorters.length === 0) {
+		return collection;
+	}
+
+	return collection.sort((item) => {
+		return sorters.reduce((previousResult, sorter) => {
+			return previousResult && applyOperation('sorter', sorter.name, item, sorter);
 		}, true);
 	});
 };
@@ -117,6 +151,30 @@ const explode = (collection, explode) => {
 			explodedItem.push(resultItem);
 
 			return explodedItem;
+		}, []));
+	}, []);
+};
+
+const implode = (collection, implode) => {
+	return collection.reduce((resultCollection, item) => {
+		return resultCollection.concat(Object.keys(item).reduce((implodedItem, key) => {
+
+			let resultItem = {};
+
+			if (implode.id) {
+				if (implode.id.includes(key)) {
+					return implodedItem;
+				}
+
+				resultItem.id = Helper.get(item, implode.id);
+			}
+
+			resultItem[(implode.key ? implode.key : 'key')] = key;
+			resultItem[(implode.value ? implode.value : 'value')] = item[key];
+
+			implodedItem.push(resultItem);
+
+			return implodedItem;
 		}, []));
 	}, []);
 };
@@ -183,8 +241,10 @@ export default {
 	overturn: overturn,
 	filter: filter,
 	pick: pick,
+	sort: sort,
 	map: map,
 	explode: explode,
 	select: select,
+	uniq: uniq,
 	reduce: reduce,
 };

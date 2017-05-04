@@ -2,6 +2,7 @@
 import Cheff from './Cheff';
 import Helper from './Helper';
 import coreFilters from './CoreOperations/filters';
+// import coreSorters from './CoreOperations/sorters';
 import coreMappers from './CoreOperations/mappers';
 import coreSelectors from './CoreOperations/selectors';
 import coreReducers from './CoreOperations/reducers';
@@ -14,26 +15,17 @@ var operationsStore = {
 	reducers: coreReducers,
 };
 
-const injectParameters = (recipe, parameters) => {
-
-	var serializedRecipe = JSON.stringify(recipe);
-
-	for (var parameterName in parameters) {
-		serializedRecipe = serializedRecipe.replace(new RegExp('#' + parameterName + '#', 'g'), parameters[parameterName]);
-	}
-
-	return JSON.parse(serializedRecipe);
-};
-
 const applyStep = (collection, step) => {
 	step = step || {};
 
 	collection = step.overturn ? Cheff.overturn(collection, step.overturn) : collection;
 	collection = step.filters ? Cheff.filter(collection, step.filters, applyOperation) : collection;
 	collection = step.pick ? Cheff.pick(collection, step.pick) : collection;
+	// collection = step.sorters ? Cheff.sort(collection, step.sorters, applyOperation) : collection;
 	collection = step.mappers ? Cheff.map(collection, step.mappers, applyOperation) : collection;
 	collection = step.explode ? Cheff.explode(collection, step.explode) : collection;
 	collection = step.selectors ? Cheff.select(collection, step.selectors, applyOperation) : collection;
+	collection = step.uniq ? Cheff.uniq(collection, step.uniq) : collection;
 	collection = step.reducers ? [Cheff.reduce(collection, step.reducers, applyOperation)] : collection;
 
 	return collection;
@@ -95,6 +87,17 @@ module.exports = class Sushi  {
 		this.addOperation('reducer', name, method);
 	}
 
+	applyParameters (recipe, parameters) {
+
+		var serializedRecipe = JSON.stringify(recipe);
+
+		for (var parameterName in parameters) {
+			serializedRecipe = serializedRecipe.replace(new RegExp('#' + parameterName + '#', 'g'), parameters[parameterName]);
+		}
+
+		return JSON.parse(serializedRecipe);
+	}
+
 	cook (collection, recipe, parameters) {
 
 		if (tools.isObject(recipe)) {
@@ -104,7 +107,7 @@ module.exports = class Sushi  {
 		}
 
 		if (parameters) {
-			recipe = injectParameters(recipe, parameters);
+			recipe = this.applyParameters(recipe, parameters);
 		}
 
 		var that = this;

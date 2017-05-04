@@ -10,6 +10,14 @@ export default {
 		return Helper.get(item, filter.path) !== filter.match;
 	},
 
+	includes: (item, filter) => {
+		return Helper.get(item, filter.path).includes(filter.match);
+	},
+
+	excludes: (item, filter) => {
+		return !Helper.get(item, filter.path).includes(filter.match);
+	},
+
 	compare: (item, filter) => {
 		return Helper.compare(
 			Helper.get(item, filter.path),

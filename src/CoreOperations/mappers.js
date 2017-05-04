@@ -7,7 +7,6 @@ export default {
 	},
 
 	replace: (value, mapper) => {
-		console.log(value);
 
 		if (typeof value !== 'string') {
 			return value;

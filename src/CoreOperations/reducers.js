@@ -1,42 +1,70 @@
 import tools from '../Tools';
 import Helper from '../Helper';
 
+const matchBehavior = (reducer, previousValue, value, reduceOperation) => {
+	if (reducer.match) {
+		if (reducer.match === value) {
+			return reduceOperation();
+		} else {
+			return previousValue;
+		}
+	} else {
+		return reduceOperation();
+	}
+};
+
 export default {
 
-	total: (reducer, previousValue, value) => {
-		return previousValue + 1;
-	},
-
 	count: (reducer, previousValue, value) => {
-		return value ? previousValue + 1 : previousValue;
-	},
-
-	countCompare: (reducer, previousValue, value) => {
-		return Helper.compare(
-			Helper.get(reducer.path),
-			reducer.match,
-			reducer.operator
-		) ? previousValue + 1 : previousValue;
+		return matchBehavior(
+			reducer,
+			previousValue,
+			value,
+			() => {
+				return value ? previousValue + 1 : previousValue;
+			}
+		);
 	},
 
 	operation: (reducer, previousValue, value) => {
-		return Helper.calculate(
-			[value, previousValue],
-			reducer.operator
+		return matchBehavior(
+			reducer,
+			previousValue,
+			value,
+			() => {
+				return Helper.calculate(
+					[value, previousValue],
+					reducer.operator
+				);
+			}
 		);
 	},
 
 	average: (reducer, previousValue, value) => {
-		return Helper.average(
-			[value, previousValue],
-			reducer.operator
+		return matchBehavior(
+			reducer,
+			previousValue,
+			value,
+			() => {
+				return Helper.average(
+					[value, previousValue],
+					reducer.operator
+				);
+			}
 		);
 	},
 
 	sum: (reducer, previousValue, value) => {
-		return Helper.calculate(
-			[value, previousValue],
-			'addition'
+		return matchBehavior(
+			reducer,
+			previousValue,
+			value,
+			() => {
+				return Helper.calculate(
+					[value, previousValue],
+					'addition'
+				);
+			}
 		);
 	},
 

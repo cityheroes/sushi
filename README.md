@@ -53,3 +53,10 @@ Pickers filter **keys** of the items of a collection.
 Filters **keys** of the items of a collection.
 
 ### Usage
+
+## Development
+
+Console:
+
+Start the server: ```npm start```
+Start the watcher: ```npm run watch```
