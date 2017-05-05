@@ -1,0 +1,23 @@
+{
+  "name": "Sushi",
+  "description": "Transform datasets like a sushi master.",
+  "main": "dist/sushi.js",
+  "authors": [
+    "Mauro Trigo"
+  ],
+  "license": "ISC",
+  "keywords": [
+    "data",
+    "json",
+    "data",
+    "transformation"
+  ],
+  "homepage": "https://github.com/cityheroes/sushi",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
