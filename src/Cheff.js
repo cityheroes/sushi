@@ -2,24 +2,28 @@ import tools from './Tools';
 import Helper from './Helper';
 
 // Uni operations
-const overturnOperation = (collection, item, pivot, dest) => {
+const overturnOperation = (collection, item, pivot, parentDest, childDest) => {
 	var parent = tools.omit(item, pivot);
 	let child = item[pivot];
 
-	if (!child || !tools.isObject(child)) {
-		return collection;
-	}
-
 	if (tools.isArray(child)) {
 		return collection.concat(child.map((subitem) => {
-			subitem[dest] = parent;
+			if (tools.isObject(subitem)) {
+				subitem[parentDest] = parent;
+			} else if (childDest) {
+				let swapSubitem = {};
+				swapSubitem[parentDest] = parent;
+				swapSubitem[childDest] = subitem;
+				subitem = swapSubitem;
+			}
 			return subitem;
 		}));
-	} else {
-		child[dest] = parent;
+	} else if (tools.isObject(child)) {
+		child[parentDest] = parent;
 		collection.push(child);
 		return collection;
 	}
+	return collection;
 };
 
 const overturn = (collection, overturn) => {
@@ -30,11 +34,12 @@ const overturn = (collection, overturn) => {
 	}
 
 	var pivot = overturn.pivot,
-			dest = overturn.dest || 'parent'
+			dest = overturn.dest || 'parent',
+			child = overturn.child || null
 	;
 
 	return collection.reduce((reducedItems, item) => {
-		return overturnOperation(reducedItems, item, pivot, dest);
+		return overturnOperation(reducedItems, item, pivot, dest, child);
 	}, []);
 };
 
@@ -74,6 +79,7 @@ const uniq = (collection, uniq) => {
 		console.warn('A \'path\' parameter must be provided for uniq operation.');
 		return collection;
 	}
+
 
 	for (var i = collection.length - 1; i >= 0; i--) {
 		if (seen[Helper.get(collection[i], uniq.path)] !== 1) {
@@ -203,7 +209,28 @@ const reduce = (collection, reducers, applyOperation) => {
 
 		let start = (reducer.start || 0);
 
-		if (reducer.dest && reducer.path) {
+		 if (reducer.group && reducer.path) {
+
+		 	let auxResult = resultItem;
+
+		 	if (reducer.dest) {
+				resultItem[reducer.dest] = {};
+				auxResult = resultItem[reducer.dest];
+		 	}
+
+			collection.forEach((item) => {
+				let groupKey = Helper.get(item, reducer.group);
+
+				auxResult[groupKey] = applyOperation(
+					'reducer',
+					reducer.name,
+					reducer,
+					auxResult[groupKey] || start,
+					Helper.get(item, reducer.path)
+				);
+
+			});
+		} else if (reducer.path && reducer.dest) {
 			resultItem[reducer.dest] = collection.reduce((memo, item) => {
 
 				return applyOperation(
