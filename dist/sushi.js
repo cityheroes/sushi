@@ -16,9 +16,9 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	function __webpack_require__(moduleId) {
 /******/
 /******/ 		// Check if module is in cache
-/******/ 		if(installedModules[moduleId])
+/******/ 		if(installedModules[moduleId]) {
 /******/ 			return installedModules[moduleId].exports;
-/******/
+/******/ 		}
 /******/ 		// Create a new module (and put it into the cache)
 /******/ 		var module = installedModules[moduleId] = {
 /******/ 			i: moduleId,
@@ -423,24 +423,28 @@ var _Helper2 = _interopRequireDefault(_Helper);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // Uni operations
-var overturnOperation = function overturnOperation(collection, item, pivot, dest) {
+var overturnOperation = function overturnOperation(collection, item, pivot, parentDest, childDest) {
 	var parent = _Tools2.default.omit(item, pivot);
 	var child = item[pivot];
 
-	if (!child || !_Tools2.default.isObject(child)) {
-		return collection;
-	}
-
 	if (_Tools2.default.isArray(child)) {
 		return collection.concat(child.map(function (subitem) {
-			subitem[dest] = parent;
+			if (_Tools2.default.isObject(subitem)) {
+				subitem[parentDest] = parent;
+			} else if (childDest) {
+				var swapSubitem = {};
+				swapSubitem[parentDest] = parent;
+				swapSubitem[childDest] = subitem;
+				subitem = swapSubitem;
+			}
 			return subitem;
 		}));
-	} else {
-		child[dest] = parent;
+	} else if (_Tools2.default.isObject(child)) {
+		child[parentDest] = parent;
 		collection.push(child);
 		return collection;
 	}
+	return collection;
 };
 
 var overturn = function overturn(collection, _overturn) {
@@ -451,10 +455,11 @@ var overturn = function overturn(collection, _overturn) {
 	}
 
 	var pivot = _overturn.pivot,
-	    dest = _overturn.dest || 'parent';
+	    dest = _overturn.dest || 'parent',
+	    child = _overturn.child || null;
 
 	return collection.reduce(function (reducedItems, item) {
-		return overturnOperation(reducedItems, item, pivot, dest);
+		return overturnOperation(reducedItems, item, pivot, dest, child);
 	}, []);
 };
 
@@ -621,7 +626,21 @@ var reduce = function reduce(collection, reducers, applyOperation) {
 
 		var start = reducer.start || 0;
 
-		if (reducer.dest && reducer.path) {
+		if (reducer.group && reducer.path) {
+
+			var auxResult = resultItem;
+
+			if (reducer.dest) {
+				resultItem[reducer.dest] = {};
+				auxResult = resultItem[reducer.dest];
+			}
+
+			collection.forEach(function (item) {
+				var groupKey = _Helper2.default.get(item, reducer.group);
+
+				auxResult[groupKey] = applyOperation('reducer', reducer.name, reducer, auxResult[groupKey] || start, _Helper2.default.get(item, reducer.path));
+			});
+		} else if (reducer.path && reducer.dest) {
 			resultItem[reducer.dest] = collection.reduce(function (memo, item) {
 
 				return applyOperation('reducer', reducer.name, reducer, memo, _Helper2.default.get(item, reducer.path));
@@ -664,28 +683,51 @@ Object.defineProperty(exports, "__esModule", {
 	value: true
 });
 
+var _Tools = __webpack_require__(1);
+
+var _Tools2 = _interopRequireDefault(_Tools);
+
 var _Helper = __webpack_require__(0);
 
 var _Helper2 = _interopRequireDefault(_Helper);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+var applyMatch = function applyMatch(value, match, filterFunction) {
+	if (_Tools2.default.isArray(match)) {
+		return match.reduce(function (memo, matchItem) {
+			return memo || filterFunction(value, matchItem);
+		}, false);
+	} else {
+		return filterFunction(value, match);
+	}
+};
+
 exports.default = {
 
 	match: function match(item, filter) {
+		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
+			return value === match;
+		});
 		return _Helper2.default.get(item, filter.path) === filter.match;
 	},
 
 	mismatch: function mismatch(item, filter) {
-		return _Helper2.default.get(item, filter.path) !== filter.match;
+		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
+			return value !== match;
+		});
 	},
 
 	includes: function includes(item, filter) {
-		return _Helper2.default.get(item, filter.path).includes(filter.match);
+		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
+			return value.includes(match);
+		});
 	},
 
 	excludes: function excludes(item, filter) {
-		return !_Helper2.default.get(item, filter.path).includes(filter.match);
+		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
+			return !value.includes(match);
+		});
 	},
 
 	compare: function compare(item, filter) {
@@ -693,12 +735,15 @@ exports.default = {
 	},
 
 	start: function start(item, filter) {
-		return _Helper2.default.get(item, filter.path, '').indexOf(filter.match) !== -1;
+		return applyMatch(_Helper2.default.get(item, filter.path, ''), filter.match, function (value, match) {
+			return value.indexOf(match) === 0;
+		});
 	},
 
 	end: function end(item, filter) {
-		var subject = _Helper2.default.get(item, filter.path, '');
-		return subject.indexOf(filter.match, subject.length - filter.match.length) !== -1;
+		return applyMatch(_Helper2.default.get(item, filter.path, ''), filter.match, function (value, match) {
+			return value.indexOf(match, value.length - match.length) !== -1;
+		});
 	}
 
 };
