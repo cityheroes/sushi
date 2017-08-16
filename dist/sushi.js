@@ -1001,18 +1001,74 @@ var operationsStore = {
 	reducers: _reducers2.default
 };
 
+var operationsMap = {
+	overturn: function overturn(collection, step) {
+		return _Cheff2.default.overturn(collection, step.content);
+	},
+	filters: function filters(collection, step) {
+		return _Cheff2.default.filter(collection, step.content, applyOperation);
+	},
+	pick: function pick(collection, step) {
+		return _Cheff2.default.pick(collection, step.content);
+	},
+	// sorters: (collection, step) => {
+	// 	return Cheff.sort(collection, step.content, applyOperation);
+	// },
+	mappers: function mappers(collection, step) {
+		return _Cheff2.default.map(collection, step.content, applyOperation);
+	},
+	explode: function explode(collection, step) {
+		return _Cheff2.default.explode(collection, step.content);
+	},
+	selectors: function selectors(collection, step) {
+		return _Cheff2.default.select(collection, step.content, applyOperation);
+	},
+	uniq: function uniq(collection, step) {
+		return _Cheff2.default.uniq(collection, step.content);
+	},
+	reducers: function reducers(collection, step) {
+		return [_Cheff2.default.reduce(collection, step.content, applyOperation)];
+	}
+};
+
+var operationsList = ['overturn', 'filters', 'pick', 'sorters', 'mappers', 'explode', 'selectors', 'uniq', 'reducers'];
+
+var convertFromLegacy = function convertFromLegacy(recipe) {
+	var testStep = recipe[0];
+	if (testStep && operationsList.reduce(function (memo, operationName) {
+		return memo || !!testStep[operationName];
+	}, false)) {
+
+		console.warn('Legacy recipe found.');
+
+		var newRecipe = [];
+
+		recipe.forEach(function (step) {
+			Object.keys(step).forEach(function (key) {
+				newRecipe.push({
+					operation: key,
+					content: step[key]
+				});
+			});
+		});
+
+		console.log('New recipe :');
+		console.log(JSON.stringify(newRecipe, null, 3));
+
+		return newRecipe;
+	} else {
+		return recipe;
+	}
+};
+
 var applyStep = function applyStep(collection, step) {
 	step = step || {};
 
-	collection = step.overturn ? _Cheff2.default.overturn(collection, step.overturn) : collection;
-	collection = step.filters ? _Cheff2.default.filter(collection, step.filters, applyOperation) : collection;
-	collection = step.pick ? _Cheff2.default.pick(collection, step.pick) : collection;
-	// collection = step.sorters ? Cheff.sort(collection, step.sorters, applyOperation) : collection;
-	collection = step.mappers ? _Cheff2.default.map(collection, step.mappers, applyOperation) : collection;
-	collection = step.explode ? _Cheff2.default.explode(collection, step.explode) : collection;
-	collection = step.selectors ? _Cheff2.default.select(collection, step.selectors, applyOperation) : collection;
-	collection = step.uniq ? _Cheff2.default.uniq(collection, step.uniq) : collection;
-	collection = step.reducers ? [_Cheff2.default.reduce(collection, step.reducers, applyOperation)] : collection;
+	if (operationsMap[step.operation]) {
+		collection = operationsMap[step.operation](collection, step);
+	} else {
+		console.warn('Not found: ' + step.operation + '.');
+	}
 
 	return collection;
 };
@@ -1107,11 +1163,12 @@ module.exports = function () {
 				recipe = [];
 			}
 
+			recipe = convertFromLegacy(recipe);
+
 			if (parameters) {
 				recipe = this.applyParameters(recipe, parameters);
 			}
 
-			var that = this;
 			recipe.forEach(function (step) {
 				collection = applyStep(collection, step);
 			});
@@ -1123,21 +1180,6 @@ module.exports = function () {
 		value: function helper() {
 			return _Helper2.default;
 		}
-
-		// _expand (obj, expanders) {
-		// 	var that = this;
-		// 	return Object.keys(obj).map((key) => {
-		// 		return expanders.reduce((expandedItem, expander) => {
-		// 			expandedItem[expander.output] = that._applyExpander(expander, obj[key]);
-		// 			return expandedItem;
-		// 		}, {});
-		// 	});
-		// }
-
-		// _applyExpander (expander, item) {
-		// 	return operationsStore.expanders[expander.name] ? operationsStore.expanders[expander.name](item, expander, Helper) : notFound('expander', expander.name);
-		// }
-
 	}]);
 
 	return Sushi;
