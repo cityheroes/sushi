@@ -1,3 +1,4 @@
+```
       ___           ___           ___           ___
      /\  \         /\__\         /\  \         /\__\          ___
     /::\  \       /:/  /        /::\  \       /:/  /         /\  \
@@ -10,7 +11,7 @@
     \::/  /       \::/  /       \::/  /        /:/  /      \/__/
      \/__/         \/__/         \/__/         \/__/
 
-
+```
 
 Sushi allows you to transform collections of JSON objects using a declarative syntax. We use it at [CityHeroes](http://cityhero.es/) to process the results of our RESTful APIs.
 
