@@ -21,7 +21,6 @@ It's based on the concepts from [AssemblyLine](https://github.com/cityheroes/ass
 - Independent - dependencies like *underscore* or *moment* are no longer required (at least for the core library)
 - More powerful - new features and capabilities like variables, the core helper, enhanced path notation
 
-
 ## Basics
 
 ### Glosary
@@ -60,3 +59,11 @@ Console:
 
 Start the server: ```npm start```
 Start the watcher: ```npm run watch```
+
+## ToDo:
+
+- Flat array recipe format.
+- Async operations using *Promise*.
+- Time operations.
+- Review concepts within the library.
+
