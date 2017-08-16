@@ -17,31 +17,31 @@ var operationsStore = {
 
 const operationsMap = {
 	overturn: (collection, step) => {
-		return Cheff.overturn(collection, step.content);
+		return Cheff.overturn(collection, step.cont);
 	},
 	filters: (collection, step) => {
-		return Cheff.filter(collection, step.content, applyOperation);
+		return Cheff.filter(collection, step.cont, applyOperation);
 	},
 	pick: (collection, step) => {
-		return Cheff.pick(collection, step.content);
+		return Cheff.pick(collection, step.cont);
 	},
 	// sorters: (collection, step) => {
-	// 	return Cheff.sort(collection, step.content, applyOperation);
+	// 	return Cheff.sort(collection, step.cont, applyOperation);
 	// },
 	mappers: (collection, step) => {
-		return Cheff.map(collection, step.content, applyOperation);
+		return Cheff.map(collection, step.cont, applyOperation);
 	},
 	explode: (collection, step) => {
-		return Cheff.explode(collection, step.content);
+		return Cheff.explode(collection, step.cont);
 	},
 	selectors: (collection, step) => {
-		return Cheff.select(collection, step.content, applyOperation);
+		return Cheff.select(collection, step.cont, applyOperation);
 	},
 	uniq: (collection, step) => {
-		return Cheff.uniq(collection, step.content);
+		return Cheff.uniq(collection, step.cont);
 	},
 	reducers: (collection, step) => {
-		return [Cheff.reduce(collection, step.content, applyOperation)];
+		return [Cheff.reduce(collection, step.cont, applyOperation)];
 	},
 };
 
@@ -70,8 +70,8 @@ const convertFromLegacy = (recipe) => {
 		recipe.forEach((step) => {
 			Object.keys(step).forEach((key) => {
 				newRecipe.push({
-					operation: key,
-					content: step[key]
+					op: key,
+					cont: step[key]
 				});
 			});
 		});
@@ -88,10 +88,10 @@ const convertFromLegacy = (recipe) => {
 const applyStep = (collection, step) => {
 	step = step || {};
 
-	if (operationsMap[step.operation]) {
-		collection = operationsMap[step.operation](collection, step);
+	if (operationsMap[step.op]) {
+		collection = operationsMap[step.op](collection, step);
 	} else {
-		console.warn('Not found: ' + step.operation + '.');
+		console.warn('Not found: ' + step.op + '.');
 	}
 
 	return collection;

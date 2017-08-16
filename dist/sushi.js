@@ -1003,31 +1003,31 @@ var operationsStore = {
 
 var operationsMap = {
 	overturn: function overturn(collection, step) {
-		return _Cheff2.default.overturn(collection, step.content);
+		return _Cheff2.default.overturn(collection, step.cont);
 	},
 	filters: function filters(collection, step) {
-		return _Cheff2.default.filter(collection, step.content, applyOperation);
+		return _Cheff2.default.filter(collection, step.cont, applyOperation);
 	},
 	pick: function pick(collection, step) {
-		return _Cheff2.default.pick(collection, step.content);
+		return _Cheff2.default.pick(collection, step.cont);
 	},
 	// sorters: (collection, step) => {
-	// 	return Cheff.sort(collection, step.content, applyOperation);
+	// 	return Cheff.sort(collection, step.cont, applyOperation);
 	// },
 	mappers: function mappers(collection, step) {
-		return _Cheff2.default.map(collection, step.content, applyOperation);
+		return _Cheff2.default.map(collection, step.cont, applyOperation);
 	},
 	explode: function explode(collection, step) {
-		return _Cheff2.default.explode(collection, step.content);
+		return _Cheff2.default.explode(collection, step.cont);
 	},
 	selectors: function selectors(collection, step) {
-		return _Cheff2.default.select(collection, step.content, applyOperation);
+		return _Cheff2.default.select(collection, step.cont, applyOperation);
 	},
 	uniq: function uniq(collection, step) {
-		return _Cheff2.default.uniq(collection, step.content);
+		return _Cheff2.default.uniq(collection, step.cont);
 	},
 	reducers: function reducers(collection, step) {
-		return [_Cheff2.default.reduce(collection, step.content, applyOperation)];
+		return [_Cheff2.default.reduce(collection, step.cont, applyOperation)];
 	}
 };
 
@@ -1046,8 +1046,8 @@ var convertFromLegacy = function convertFromLegacy(recipe) {
 		recipe.forEach(function (step) {
 			Object.keys(step).forEach(function (key) {
 				newRecipe.push({
-					operation: key,
-					content: step[key]
+					op: key,
+					cont: step[key]
 				});
 			});
 		});
@@ -1064,10 +1064,10 @@ var convertFromLegacy = function convertFromLegacy(recipe) {
 var applyStep = function applyStep(collection, step) {
 	step = step || {};
 
-	if (operationsMap[step.operation]) {
-		collection = operationsMap[step.operation](collection, step);
+	if (operationsMap[step.op]) {
+		collection = operationsMap[step.op](collection, step);
 	} else {
-		console.warn('Not found: ' + step.operation + '.');
+		console.warn('Not found: ' + step.op + '.');
 	}
 
 	return collection;
