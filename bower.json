@@ -1,5 +1,5 @@
 {
-  "name": "Sushi",
+  "name": "sushi",
   "description": "Transform datasets like a sushi master.",
   "main": "dist/sushi.js",
   "authors": [
