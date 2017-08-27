@@ -2,7 +2,7 @@
   "name": "sushi-js",
   "version": "1.2.0",
   "description": "Transform datasets like a sushi master.",
-  "main": "dist/Sushi.js",
+  "main": "dist/sushi.js",
   "module": "src/Sushi.js",
   "scripts": {
     "start": "webpack-dev-server",
