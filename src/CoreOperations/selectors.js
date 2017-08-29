@@ -1,4 +1,5 @@
 import Helper from '../Helper';
+import Tools from '../Tools';
 
 export default {
 
@@ -66,5 +67,19 @@ export default {
 			return 0;
 		}
 	},
+
+	existsInArray: (item, selector) => {
+
+		let value = Helper.get(item, selector.path);
+
+		if (!Tools.isArray(value)) {
+			return value;
+		}
+
+		let matchValue = selector.matchValue || 1;
+		let mismatchValue = selector.mismatchValue || 0;
+
+		return value.indexOf(selector.match) !== -1 ? matchValue : mismatchValue;
+	}
 
 };

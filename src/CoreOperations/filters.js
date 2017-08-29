@@ -1,8 +1,8 @@
-import tools from '../Tools';
+import Tools from '../Tools';
 import Helper from '../Helper';
 
 const applyMatch = (value, match, filterFunction) => {
-	if (tools.isArray(match)) {
+	if (Tools.isArray(match)) {
 		return match.reduce((memo, matchItem) => {
 			return memo || filterFunction(value, matchItem);
 		}, false);
@@ -30,6 +30,27 @@ export default {
 			filter.match,
 			(value, match) => {
 				return value !== match;
+			}
+		);
+	},
+
+	matchType: (item, filter) => {
+		return applyMatch(
+			Helper.get(item, filter.path),
+			filter.match,
+			(value, match) => {
+				return typeof value === match;
+			}
+		);
+		return Helper.get(item, filter.path) === filter.match;
+	},
+
+	mismatchType: (item, filter) => {
+		return applyMatch(
+			Helper.get(item, filter.path),
+			filter.match,
+			(value, match) => {
+				return typeof value !== match;
 			}
 		);
 	},

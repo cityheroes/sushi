@@ -1,4 +1,3 @@
-import Helper from '../Helper';
 
 export default {
 
@@ -42,6 +41,6 @@ export default {
 		let convertions = mapper.convertions || {};
 		let roundedValue = Math.round(value);
 		return typeof convertions[roundedValue] !== 'undefined' ? convertions[roundedValue] : value;
-	},
+	}
 
 };
