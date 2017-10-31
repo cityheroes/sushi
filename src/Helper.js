@@ -19,7 +19,11 @@ const get = (obj, path, defaultValue) => {
 				obj = undefined;
 			}
 		} else {
-			obj = obj[comp];
+			if (isNaN(comp)) {
+				obj = obj[comp];
+			} else {
+				obj = obj[('undefined' === typeof obj[comp] ? Number(comp) : comp)];
+			}
 		}
 	}
 
