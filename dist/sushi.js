@@ -112,7 +112,11 @@ var get = function get(obj, path, defaultValue) {
 				obj = undefined;
 			}
 		} else {
-			obj = obj[comp];
+			if (isNaN(comp)) {
+				obj = obj[comp];
+			} else {
+				obj = obj['undefined' === typeof obj[comp] ? Number(comp) : comp];
+			}
 		}
 	}
 
@@ -912,8 +916,8 @@ exports.default = {
 
 	split: function split(item, selector) {
 		return selector.paths.map(function (path) {
-			return _Helper2.default.get(item, path, selector.default);
-		}).split(selector.separator || ' ');
+			return _Helper2.default.get(item, path, selector.default).split(selector.separator || ' ');
+		});
 	},
 
 	format: function format(item, selector) {
