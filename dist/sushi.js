@@ -711,7 +711,6 @@ exports.default = {
 		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
 			return value === match;
 		});
-		return _Helper2.default.get(item, filter.path) === filter.match;
 	},
 
 	mismatch: function mismatch(item, filter) {
@@ -724,7 +723,6 @@ exports.default = {
 		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
 			return (typeof value === 'undefined' ? 'undefined' : _typeof(value)) === match;
 		});
-		return _Helper2.default.get(item, filter.path) === filter.match;
 	},
 
 	mismatchType: function mismatchType(item, filter) {
@@ -1124,10 +1122,12 @@ var invalidOperation = function invalidOperation(type, name) {
 
 // Cannot use 'export default' for compatibility issues
 module.exports = function () {
-	function Sushi(options) {
+	function Sushi() {
+		var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
 		_classCallCheck(this, Sushi);
 
-		this.options = options || {};
+		this.options = options;
 	}
 
 	_createClass(Sushi, [{

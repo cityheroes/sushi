@@ -7,7 +7,7 @@ const applyMatch = (value, match, filterFunction) => {
 			return memo || filterFunction(value, matchItem);
 		}, false);
 	} else {
-		return filterFunction(value, match)
+		return filterFunction(value, match);
 	}
 };
 
@@ -21,7 +21,6 @@ export default {
 				return value === match;
 			}
 		);
-		return Helper.get(item, filter.path) === filter.match;
 	},
 
 	mismatch: (item, filter) => {
@@ -42,7 +41,6 @@ export default {
 				return typeof value === match;
 			}
 		);
-		return Helper.get(item, filter.path) === filter.match;
 	},
 
 	mismatchType: (item, filter) => {

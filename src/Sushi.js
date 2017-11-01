@@ -120,8 +120,8 @@ const invalidOperation = (type, name) => {
 // Cannot use 'export default' for compatibility issues
 module.exports = class Sushi  {
 
-	constructor (options) {
-		this.options = options || {};
+	constructor (options = {}) {
+		this.options = options;
 	}
 
 	addOperationsBundle (processesBundle) {
