@@ -57,13 +57,11 @@ const operationsList = [
 	'reducers'
 ];
 
-const convertFromLegacy = (recipe) => {
+const convertFromLegacy = (recipe, verbose) => {
 	var testStep = recipe[0];
 	if (testStep && operationsList.reduce((memo, operationName) => {
 		return memo || !!testStep[operationName];
 	}, false)) {
-
-		console.warn('Legacy recipe found.');
 
 		var newRecipe = [];
 
@@ -76,8 +74,11 @@ const convertFromLegacy = (recipe) => {
 			});
 		});
 
-		console.log('New recipe :');
-		console.log(JSON.stringify(newRecipe, null, 3));
+		if (verbose) {
+			console.warn('Legacy recipe found.');
+			console.log('New recipe :');
+			console.log(JSON.stringify(newRecipe, null, 3));
+		}
 
 		return newRecipe;
 	} else {
@@ -118,6 +119,10 @@ const invalidOperation = (type, name) => {
 
 // Cannot use 'export default' for compatibility issues
 module.exports = class Sushi  {
+
+	constructor (options = {}) {
+		this.options = options;
+	}
 
 	addOperationsBundle (processesBundle) {
 		this.addOperations('filter', processesBundle.filters);
@@ -172,7 +177,7 @@ module.exports = class Sushi  {
 			recipe = [];
 		}
 
-		recipe = convertFromLegacy(recipe);
+		recipe = convertFromLegacy(recipe, this.options.verbose);
 
 		if (parameters) {
 			recipe = this.applyParameters(recipe, parameters);
