@@ -218,7 +218,7 @@ const reduce = (collection, reducers, applyOperation) => {
 				auxResult = resultItem[reducer.dest];
 		 	}
 
-			collection.forEach((item) => {
+			collection.forEach((item, index) => {
 				let groupKey = Helper.get(item, reducer.group);
 
 				auxResult[groupKey] = applyOperation(
@@ -226,25 +226,29 @@ const reduce = (collection, reducers, applyOperation) => {
 					reducer.name,
 					reducer,
 					auxResult[groupKey] || start,
-					Helper.get(item, reducer.path)
+					Helper.get(item, reducer.path),
+					index,
+					collection.length
 				);
 
 			});
 		} else if (reducer.path && reducer.dest) {
-			resultItem[reducer.dest] = collection.reduce((memo, item) => {
+			resultItem[reducer.dest] = collection.reduce((memo, item, index) => {
 
 				return applyOperation(
 					'reducer',
 					reducer.name,
 					reducer,
 					memo,
-					Helper.get(item, reducer.path)
+					Helper.get(item, reducer.path),
+					index,
+					collection.length
 				);
 
 			}, start);
 		} else if (reducer.keys) {
 
-			collection.forEach((item) => {
+			collection.forEach((item, index) => {
 				Helper.iterateKeys(item, reducer.keys, (key) => {
 
 					resultItem[key] = applyOperation(
@@ -252,7 +256,9 @@ const reduce = (collection, reducers, applyOperation) => {
 						reducer.name,
 						reducer,
 						resultItem[key] || start,
-						item[key]
+						item[key],
+						index,
+						collection.length
 					);
 
 				});

@@ -87,7 +87,51 @@ Object.defineProperty(exports, "__esModule", {
 	value: true
 });
 
-var _Tools = __webpack_require__(1);
+var isArray = function isArray(value) {
+	return Array.isArray(value);
+};
+
+var isObject = function isObject(obj) {
+	return Object.prototype.toString.call(obj) === '[object Object]';
+};
+
+var omit = function omit(obj, keys) {
+
+	if (!isObject(obj)) {
+		return obj;
+	}
+
+	keys = !isArray(keys) ? [keys] : keys;
+
+	var result = {};
+
+	for (var property in obj) {
+		if (obj.hasOwnProperty(property) && keys.indexOf(property) === -1) {
+			result[property] = obj[property];
+		}
+	}
+
+	return result;
+};
+
+exports.default = {
+	isArray: isArray,
+	isObject: isObject,
+	omit: omit
+};
+
+/***/ }),
+/* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+
+var _Tools = __webpack_require__(0);
 
 var _Tools2 = _interopRequireDefault(_Tools);
 
@@ -362,50 +406,6 @@ exports.default = {
 };
 
 /***/ }),
-/* 1 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-
-var isArray = function isArray(value) {
-	return Array.isArray(value);
-};
-
-var isObject = function isObject(obj) {
-	return Object.prototype.toString.call(obj) === '[object Object]';
-};
-
-var omit = function omit(obj, keys) {
-
-	if (!isObject(obj)) {
-		return obj;
-	}
-
-	keys = !isArray(keys) ? [keys] : keys;
-
-	var result = {};
-
-	for (var property in obj) {
-		if (obj.hasOwnProperty(property) && keys.indexOf(property) === -1) {
-			result[property] = obj[property];
-		}
-	}
-
-	return result;
-};
-
-exports.default = {
-	isArray: isArray,
-	isObject: isObject,
-	omit: omit
-};
-
-/***/ }),
 /* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -416,11 +416,11 @@ Object.defineProperty(exports, "__esModule", {
 	value: true
 });
 
-var _Tools = __webpack_require__(1);
+var _Tools = __webpack_require__(0);
 
 var _Tools2 = _interopRequireDefault(_Tools);
 
-var _Helper = __webpack_require__(0);
+var _Helper = __webpack_require__(1);
 
 var _Helper2 = _interopRequireDefault(_Helper);
 
@@ -639,22 +639,22 @@ var reduce = function reduce(collection, reducers, applyOperation) {
 				auxResult = resultItem[reducer.dest];
 			}
 
-			collection.forEach(function (item) {
+			collection.forEach(function (item, index) {
 				var groupKey = _Helper2.default.get(item, reducer.group);
 
-				auxResult[groupKey] = applyOperation('reducer', reducer.name, reducer, auxResult[groupKey] || start, _Helper2.default.get(item, reducer.path));
+				auxResult[groupKey] = applyOperation('reducer', reducer.name, reducer, auxResult[groupKey] || start, _Helper2.default.get(item, reducer.path), index, collection.length);
 			});
 		} else if (reducer.path && reducer.dest) {
-			resultItem[reducer.dest] = collection.reduce(function (memo, item) {
+			resultItem[reducer.dest] = collection.reduce(function (memo, item, index) {
 
-				return applyOperation('reducer', reducer.name, reducer, memo, _Helper2.default.get(item, reducer.path));
+				return applyOperation('reducer', reducer.name, reducer, memo, _Helper2.default.get(item, reducer.path), index, collection.length);
 			}, start);
 		} else if (reducer.keys) {
 
-			collection.forEach(function (item) {
+			collection.forEach(function (item, index) {
 				_Helper2.default.iterateKeys(item, reducer.keys, function (key) {
 
-					resultItem[key] = applyOperation('reducer', reducer.name, reducer, resultItem[key] || start, item[key]);
+					resultItem[key] = applyOperation('reducer', reducer.name, reducer, resultItem[key] || start, item[key], index, collection.length);
 				});
 			});
 		}
@@ -687,11 +687,13 @@ Object.defineProperty(exports, "__esModule", {
 	value: true
 });
 
-var _Tools = __webpack_require__(1);
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+var _Tools = __webpack_require__(0);
 
 var _Tools2 = _interopRequireDefault(_Tools);
 
-var _Helper = __webpack_require__(0);
+var _Helper = __webpack_require__(1);
 
 var _Helper2 = _interopRequireDefault(_Helper);
 
@@ -713,12 +715,23 @@ exports.default = {
 		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
 			return value === match;
 		});
-		return _Helper2.default.get(item, filter.path) === filter.match;
 	},
 
 	mismatch: function mismatch(item, filter) {
 		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
 			return value !== match;
+		});
+	},
+
+	matchType: function matchType(item, filter) {
+		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
+			return (typeof value === 'undefined' ? 'undefined' : _typeof(value)) === match;
+		});
+	},
+
+	mismatchType: function mismatchType(item, filter) {
+		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
+			return (typeof value === 'undefined' ? 'undefined' : _typeof(value)) !== match;
 		});
 	},
 
@@ -762,13 +775,6 @@ exports.default = {
 Object.defineProperty(exports, "__esModule", {
 	value: true
 });
-
-var _Helper = __webpack_require__(0);
-
-var _Helper2 = _interopRequireDefault(_Helper);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 exports.default = {
 
 	pass: function pass(value, mapper) {
@@ -823,11 +829,11 @@ Object.defineProperty(exports, "__esModule", {
 	value: true
 });
 
-var _Tools = __webpack_require__(1);
+var _Tools = __webpack_require__(0);
 
 var _Tools2 = _interopRequireDefault(_Tools);
 
-var _Helper = __webpack_require__(0);
+var _Helper = __webpack_require__(1);
 
 var _Helper2 = _interopRequireDefault(_Helper);
 
@@ -859,9 +865,15 @@ exports.default = {
 		});
 	},
 
-	average: function average(reducer, previousValue, value) {
+	average: function average(reducer, previousValue, value, index, size) {
 		return matchBehavior(reducer, previousValue, value, function () {
-			return _Helper2.default.average([value, previousValue], reducer.operator);
+			var result = _Helper2.default.calculate([value, previousValue], 'addition');
+
+			if (index < size - 1) {
+				return result;
+			} else {
+				return result / size;
+			}
 		});
 	},
 
@@ -896,9 +908,13 @@ Object.defineProperty(exports, "__esModule", {
 	value: true
 });
 
-var _Helper = __webpack_require__(0);
+var _Helper = __webpack_require__(1);
 
 var _Helper2 = _interopRequireDefault(_Helper);
+
+var _Tools = __webpack_require__(0);
+
+var _Tools2 = _interopRequireDefault(_Tools);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -951,6 +967,20 @@ exports.default = {
 		} else {
 			return 0;
 		}
+	},
+
+	existsInArray: function existsInArray(item, selector) {
+
+		var value = _Helper2.default.get(item, selector.path);
+
+		if (!_Tools2.default.isArray(value)) {
+			return value;
+		}
+
+		var matchValue = selector.matchValue || 1;
+		var mismatchValue = selector.mismatchValue || 0;
+
+		return value.indexOf(selector.match) !== -1 ? matchValue : mismatchValue;
 	}
 
 };
@@ -970,7 +1000,7 @@ var _Cheff = __webpack_require__(2);
 
 var _Cheff2 = _interopRequireDefault(_Cheff);
 
-var _Helper = __webpack_require__(0);
+var _Helper = __webpack_require__(1);
 
 var _Helper2 = _interopRequireDefault(_Helper);
 
@@ -990,7 +1020,7 @@ var _reducers = __webpack_require__(5);
 
 var _reducers2 = _interopRequireDefault(_reducers);
 
-var _Tools = __webpack_require__(1);
+var _Tools = __webpack_require__(0);
 
 var _Tools2 = _interopRequireDefault(_Tools);
 
@@ -1037,13 +1067,11 @@ var operationsMap = {
 
 var operationsList = ['overturn', 'filters', 'pick', 'sorters', 'mappers', 'explode', 'selectors', 'uniq', 'reducers'];
 
-var convertFromLegacy = function convertFromLegacy(recipe) {
+var convertFromLegacy = function convertFromLegacy(recipe, verbose) {
 	var testStep = recipe[0];
 	if (testStep && operationsList.reduce(function (memo, operationName) {
 		return memo || !!testStep[operationName];
 	}, false)) {
-
-		console.warn('Legacy recipe found.');
 
 		var newRecipe = [];
 
@@ -1056,8 +1084,11 @@ var convertFromLegacy = function convertFromLegacy(recipe) {
 			});
 		});
 
-		console.log('New recipe :');
-		console.log(JSON.stringify(newRecipe, null, 3));
+		if (verbose) {
+			console.warn('Legacy recipe found.');
+			console.log('New recipe :');
+			console.log(JSON.stringify(newRecipe, null, 3));
+		}
 
 		return newRecipe;
 	} else {
@@ -1102,7 +1133,11 @@ var invalidOperation = function invalidOperation(type, name) {
 // Cannot use 'export default' for compatibility issues
 module.exports = function () {
 	function Sushi() {
+		var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
 		_classCallCheck(this, Sushi);
+
+		this.options = options;
 	}
 
 	_createClass(Sushi, [{
@@ -1167,7 +1202,7 @@ module.exports = function () {
 				recipe = [];
 			}
 
-			recipe = convertFromLegacy(recipe);
+			recipe = convertFromLegacy(recipe, this.options.verbose);
 
 			if (parameters) {
 				recipe = this.applyParameters(recipe, parameters);
