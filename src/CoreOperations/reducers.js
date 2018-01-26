@@ -40,16 +40,22 @@ export default {
 		);
 	},
 
-	average: (reducer, previousValue, value) => {
+	average: (reducer, previousValue, value, index, size) => {
 		return matchBehavior(
 			reducer,
 			previousValue,
 			value,
 			() => {
-				return Helper.average(
+				let result = Helper.calculate(
 					[value, previousValue],
-					reducer.operator
+					'addition'
 				);
+
+				if (index < size - 1) {
+					return result;
+				} else {
+					return result / size;
+				}
 			}
 		);
 	},

@@ -639,22 +639,22 @@ var reduce = function reduce(collection, reducers, applyOperation) {
 				auxResult = resultItem[reducer.dest];
 			}
 
-			collection.forEach(function (item) {
+			collection.forEach(function (item, index) {
 				var groupKey = _Helper2.default.get(item, reducer.group);
 
-				auxResult[groupKey] = applyOperation('reducer', reducer.name, reducer, auxResult[groupKey] || start, _Helper2.default.get(item, reducer.path));
+				auxResult[groupKey] = applyOperation('reducer', reducer.name, reducer, auxResult[groupKey] || start, _Helper2.default.get(item, reducer.path), index, collection.length);
 			});
 		} else if (reducer.path && reducer.dest) {
-			resultItem[reducer.dest] = collection.reduce(function (memo, item) {
+			resultItem[reducer.dest] = collection.reduce(function (memo, item, index) {
 
-				return applyOperation('reducer', reducer.name, reducer, memo, _Helper2.default.get(item, reducer.path));
+				return applyOperation('reducer', reducer.name, reducer, memo, _Helper2.default.get(item, reducer.path), index, collection.length);
 			}, start);
 		} else if (reducer.keys) {
 
-			collection.forEach(function (item) {
+			collection.forEach(function (item, index) {
 				_Helper2.default.iterateKeys(item, reducer.keys, function (key) {
 
-					resultItem[key] = applyOperation('reducer', reducer.name, reducer, resultItem[key] || start, item[key]);
+					resultItem[key] = applyOperation('reducer', reducer.name, reducer, resultItem[key] || start, item[key], index, collection.length);
 				});
 			});
 		}
@@ -865,9 +865,15 @@ exports.default = {
 		});
 	},
 
-	average: function average(reducer, previousValue, value) {
+	average: function average(reducer, previousValue, value, index, size) {
 		return matchBehavior(reducer, previousValue, value, function () {
-			return _Helper2.default.average([value, previousValue], reducer.operator);
+			var result = _Helper2.default.calculate([value, previousValue], 'addition');
+
+			if (index < size - 1) {
+				return result;
+			} else {
+				return result / size;
+			}
 		});
 	},
 
