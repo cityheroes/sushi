@@ -257,6 +257,11 @@ const pivot = (collection, pivotCont) => {
 		}
 
 		if (includeColumnTotal) {
+			if (includeRowTotal) {
+				columnTotalItem[totalRowName] = tmpColumnHeaders.reduce((partial, columnHeader) => {
+					return partial + columnTotalItem[columnHeader];
+				}, 0);
+			}
 			result.push(columnTotalItem);
 		}
 	}

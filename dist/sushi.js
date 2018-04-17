@@ -682,6 +682,11 @@ var pivot = function pivot(collection, pivotCont) {
 			}
 
 			if (includeColumnTotal) {
+				if (includeRowTotal) {
+					columnTotalItem[totalRowName] = tmpColumnHeaders.reduce(function (partial, columnHeader) {
+						return partial + columnTotalItem[columnHeader];
+					}, 0);
+				}
 				result.push(columnTotalItem);
 			}
 		})();
