@@ -43,6 +43,9 @@ const operationsMap = {
 	reducers: (collection, step) => {
 		return [Cheff.reduce(collection, step.cont, applyOperation)];
 	},
+	pivot: (collection, step) => {
+		return Cheff.pivot(collection, step.cont, applyOperation);
+	}
 };
 
 const operationsList = [
@@ -54,7 +57,8 @@ const operationsList = [
 	'explode',
 	'selectors',
 	'uniq',
-	'reducers'
+	'reducers',
+	'pivot'
 ];
 
 const convertFromLegacy = (recipe, verbose) => {

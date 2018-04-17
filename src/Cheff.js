@@ -161,6 +161,55 @@ const explode = (collection, explode) => {
 	}, []);
 };
 
+const pivot = (collection, pivotCont) => {
+
+	const aggregationOps = {
+		sum: (previousValue, item) => {
+			return previousValue + Helper.get(item, pivotCont.aggregationPath, 0);
+		},
+		count: (previousValue, item) => {
+			return previousValue + 1;
+		}
+	};
+
+	let result = [],
+		tmpHash = {},
+		rowSourcePath = pivotCont.rowSourcePath,
+		rowTargetPath = pivotCont.rowTargetPath || rowSourcePath,
+		columnPath = pivotCont.columnPath,
+		aggregationOp = aggregationOps[pivotCont.aggregationOp];
+
+	let item,
+		processedItem,
+		processedItemId,
+		columnValue,
+		previousValue;
+	for (var i = 0, len = arr.length; i < len; i++) {
+		item = arr[i];
+
+		processedItemId = Helper.get(item, rowSourcePath, undefined);
+		if (!processedItemId) {
+			continue;
+		} else if (!tmpHash[processedItemId]) {
+			processedItem = {};
+			tmpHash[processedItemId] = processedItem;
+			result.push(processedItem);
+			Helper.set(processedItem, rowTargetPath, processedItemId);
+		} else {
+			processedItem = tmpHash[processedItemId];
+		}
+
+		columnValue = Helper.get(item, columnPath, undefined);
+		if (columnValue) {
+			previousValue = Helper.get(processedItem, columnValue, 0);
+			Helper.set(processedItem, columnValue, aggregationOp(previousValue, item));
+		}
+
+	}
+
+	return result;
+};
+
 const implode = (collection, implode) => {
 	return collection.reduce((resultCollection, item) => {
 		return resultCollection.concat(Object.keys(item).reduce((implodedItem, key) => {
