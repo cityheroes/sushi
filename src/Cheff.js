@@ -329,4 +329,5 @@ export default {
 	select: select,
 	uniq: uniq,
 	reduce: reduce,
+	pivot: pivot
 };
