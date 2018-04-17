@@ -806,14 +806,14 @@ exports.default = {
 	},
 
 	translate: function translate(value, mapper) {
-		var convertions = mapper.convertions || {};
-		return typeof convertions[value] !== 'undefined' ? convertions[value] : value;
+		var conversions = mapper.conversions || {};
+		return typeof conversions[value] !== 'undefined' ? conversions[value] : value;
 	},
 
 	classify: function classify(value, mapper) {
-		var convertions = mapper.convertions || {};
+		var conversions = mapper.conversions || {};
 		var roundedValue = Math.round(value);
-		return typeof convertions[roundedValue] !== 'undefined' ? convertions[roundedValue] : value;
+		return typeof conversions[roundedValue] !== 'undefined' ? conversions[roundedValue] : value;
 	}
 
 };
