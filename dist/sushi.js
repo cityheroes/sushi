@@ -806,12 +806,12 @@ exports.default = {
 	},
 
 	translate: function translate(value, mapper) {
-		var conversions = mapper.conversions || {};
+		var conversions = mapper.conversions || mapper.convertions || {};
 		return typeof conversions[value] !== 'undefined' ? conversions[value] : value;
 	},
 
 	classify: function classify(value, mapper) {
-		var conversions = mapper.conversions || {};
+		var conversions = mapper.conversions || mapper.convertions || {};
 		var roundedValue = Math.round(value);
 		return typeof conversions[roundedValue] !== 'undefined' ? conversions[roundedValue] : value;
 	}
