@@ -174,6 +174,7 @@ const pivot = (collection, pivotCont) => {
 
 	let result = [],
 		tmpHash = {},
+		tmpColumnHeaders = [],
 		rowSourcePath = pivotCont.rowSourcePath,
 		rowTargetPath = pivotCont.rowTargetPath || rowSourcePath,
 		columnPath = pivotCont.columnPath,
@@ -182,10 +183,10 @@ const pivot = (collection, pivotCont) => {
 	let item,
 		processedItem,
 		processedItemId,
-		columnValue,
+		columnHeader,
 		previousValue;
-	for (var i = 0, len = arr.length; i < len; i++) {
-		item = arr[i];
+	for (var i = 0, len = collection.length; i < len; i++) {
+		item = collection[i];
 
 		processedItemId = Helper.get(item, rowSourcePath, undefined);
 		if (!processedItemId) {
@@ -199,10 +200,20 @@ const pivot = (collection, pivotCont) => {
 			processedItem = tmpHash[processedItemId];
 		}
 
-		columnValue = Helper.get(item, columnPath, undefined);
-		if (columnValue) {
-			previousValue = Helper.get(processedItem, columnValue, 0);
-			Helper.set(processedItem, columnValue, aggregationOp(previousValue, item));
+		columnHeader = Helper.get(item, columnPath, undefined);
+		if (columnHeader) {
+
+			columnHeader = columnHeader.replace('.', '_');
+
+			if (tmpColumnHeaders.indexOf(columnHeader) === -1) {
+				tmpColumnHeaders.push(columnHeader);
+				for (var i = result.length - 1; i >= 0; i--) {
+					result[i][columnHeader] = 0;
+				}
+			}
+
+			previousValue = Helper.get(processedItem, columnHeader, 0);
+			Helper.set(processedItem, columnHeader, aggregationOp(previousValue, item));
 		}
 
 	}
