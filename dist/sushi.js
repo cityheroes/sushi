@@ -582,6 +582,114 @@ var explode = function explode(collection, _explode) {
 	}, []);
 };
 
+var pivot = function pivot(collection, pivotCont) {
+
+	var aggregationOps = {
+		sum: function sum(previousValue, item) {
+			return previousValue + _Helper2.default.get(item, pivotCont.aggregationPath, 0);
+		},
+		count: function count(previousValue, item) {
+			return previousValue + 1;
+		}
+	};
+
+	var result = [],
+	    tmpHash = {},
+	    tmpColumnHeaders = [],
+	    columnHeader = void 0,
+	    rowSourcePath = pivotCont.rowSourcePath,
+	    rowTargetPath = pivotCont.rowTargetPath || rowSourcePath,
+	    columnPath = pivotCont.columnPath,
+	    includeRowTotal = !!pivotCont.includeRowTotal,
+	    includeColumnTotal = !!pivotCont.includeColumnTotal,
+	    totalRowName = pivotCont.totalRowName || 'Total',
+	    totalColumnName = pivotCont.totalColumnName || 'Total',
+	    aggregationOp = aggregationOps[pivotCont.aggregationOp || 'count'];
+
+	var item = void 0,
+	    processedItem = void 0,
+	    processedItemId = void 0,
+	    previousValue = void 0;
+	for (var i = 0, len = collection.length; i < len; i++) {
+		item = collection[i];
+
+		processedItemId = _Helper2.default.get(item, rowSourcePath, undefined);
+
+		if (!processedItemId) {
+			continue;
+		} else if (!tmpHash[processedItemId]) {
+			processedItem = {};
+
+			for (var j = tmpColumnHeaders.length - 1; j >= 0; j--) {
+				processedItem[tmpColumnHeaders[j]] = 0;
+			}
+
+			tmpHash[processedItemId] = processedItem;
+			result.push(processedItem);
+			_Helper2.default.set(processedItem, rowTargetPath, processedItemId);
+		} else {
+			processedItem = tmpHash[processedItemId];
+		}
+
+		columnHeader = _Helper2.default.get(item, columnPath, undefined);
+		if (columnHeader) {
+
+			if (tmpColumnHeaders.indexOf(columnHeader) === -1) {
+				tmpColumnHeaders.push(columnHeader);
+				for (var k = result.length - 1; k >= 0; k--) {
+					result[k][columnHeader] = 0;
+				}
+			}
+
+			previousValue = processedItem[columnHeader] || 0;
+			processedItem[columnHeader] = aggregationOp(previousValue, item);
+		}
+	}
+
+	if (includeRowTotal || includeColumnTotal) {
+		var i;
+		var i, length;
+		var j;
+
+		(function () {
+
+			var resultItem = void 0,
+			    columnTotalItem = {};
+
+			if (includeColumnTotal) {
+				for (i = tmpColumnHeaders.length - 1; i >= 0; i--) {
+					columnTotalItem[tmpColumnHeaders[i]] = 0;
+				}
+				_Helper2.default.set(columnTotalItem, rowTargetPath, totalColumnName);
+			}
+
+			for (i = 0, length = result.length; i < length; i++) {
+
+				resultItem = result[i];
+
+				if (includeColumnTotal) {
+					for (j = tmpColumnHeaders.length - 1; j >= 0; j--) {
+						columnHeader = tmpColumnHeaders[j];
+						columnTotalItem[columnHeader] += resultItem[columnHeader];
+					}
+				}
+
+				if (includeRowTotal) {
+					resultItem[totalRowName] = tmpColumnHeaders.reduce(function (partial, columnHeader) {
+						return partial + resultItem[columnHeader];
+					}, 0);
+				}
+			}
+
+			if (includeColumnTotal) {
+				result.push(columnTotalItem);
+			}
+		})();
+	}
+
+	return result;
+};
+
 var implode = function implode(collection, _implode) {
 	return collection.reduce(function (resultCollection, item) {
 		return resultCollection.concat(Object.keys(item).reduce(function (implodedItem, key) {
@@ -673,7 +781,8 @@ exports.default = {
 	explode: explode,
 	select: select,
 	uniq: uniq,
-	reduce: reduce
+	reduce: reduce,
+	pivot: pivot
 };
 
 /***/ }),
@@ -1062,10 +1171,13 @@ var operationsMap = {
 	},
 	reducers: function reducers(collection, step) {
 		return [_Cheff2.default.reduce(collection, step.cont, applyOperation)];
+	},
+	pivot: function pivot(collection, step) {
+		return _Cheff2.default.pivot(collection, step.cont, applyOperation);
 	}
 };
 
-var operationsList = ['overturn', 'filters', 'pick', 'sorters', 'mappers', 'explode', 'selectors', 'uniq', 'reducers'];
+var operationsList = ['overturn', 'filters', 'pick', 'sorters', 'mappers', 'explode', 'selectors', 'uniq', 'reducers', 'pivot'];
 
 var convertFromLegacy = function convertFromLegacy(recipe, verbose) {
 	var testStep = recipe[0];
