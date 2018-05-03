@@ -45,6 +45,13 @@ const operationsMap = {
 	},
 	pivot: (collection, step) => {
 		return Cheff.pivot(collection, step.cont, applyOperation);
+	},
+	nest: function (collection, step) {
+		let sourcePath = step.path,
+			resultPath = step.dest || sourcePath;
+		return collection.map((element) => {
+			return Helper.set(element, resultPath, sushiCook.call(this, Helper.get(element, sourcePath, []), step.cont));
+		});
 	}
 };
 
@@ -90,11 +97,11 @@ const convertFromLegacy = (recipe, verbose) => {
 	}
 };
 
-const applyStep = (collection, step) => {
+const applyStep = function (collection, step, options) {
 	step = step || {};
 
 	if (operationsMap[step.op]) {
-		collection = operationsMap[step.op](collection, step);
+		collection = operationsMap[step.op].call(this, collection, step, options);
 	} else {
 		console.warn('Not found: ' + step.op + '.');
 	}
@@ -120,6 +127,27 @@ const invalidOperation = (type, name) => {
 	console.warn(type + ' is not a valid process type.');
 	return false;
 };
+
+function sushiCook (collection, recipe, parameters) {
+
+	if (tools.isObject(recipe)) {
+		recipe = [recipe];
+	} else if (!tools.isArray(recipe)) {
+		recipe = [];
+	}
+
+	recipe = convertFromLegacy(recipe, this.options.verbose);
+
+	if (parameters) {
+		recipe = this.applyParameters(recipe, parameters);
+	}
+
+	recipe.forEach((step) => {
+		collection = applyStep.call(this, collection, step);
+	});
+
+	return collection;
+}
 
 // Cannot use 'export default' for compatibility issues
 module.exports = class Sushi  {
@@ -174,24 +202,7 @@ module.exports = class Sushi  {
 	}
 
 	cook (collection, recipe, parameters) {
-
-		if (tools.isObject(recipe)) {
-			recipe = [recipe];
-		} else if (!tools.isArray(recipe)) {
-			recipe = [];
-		}
-
-		recipe = convertFromLegacy(recipe, this.options.verbose);
-
-		if (parameters) {
-			recipe = this.applyParameters(recipe, parameters);
-		}
-
-		recipe.forEach((step) => {
-			collection = applyStep(collection, step);
-		});
-
-		return collection;
+		return sushiCook.call(this, collection, recipe, parameters);
 	}
 
 	helper () {

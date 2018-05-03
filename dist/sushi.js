@@ -1179,6 +1179,15 @@ var operationsMap = {
 	},
 	pivot: function pivot(collection, step) {
 		return _Cheff2.default.pivot(collection, step.cont, applyOperation);
+	},
+	nest: function nest(collection, step) {
+		var _this = this;
+
+		var sourcePath = step.path,
+		    resultPath = step.dest || sourcePath;
+		return collection.map(function (element) {
+			return _Helper2.default.set(element, resultPath, sushiCook.call(_this, _Helper2.default.get(element, sourcePath, []), step.cont));
+		});
 	}
 };
 
@@ -1213,11 +1222,11 @@ var convertFromLegacy = function convertFromLegacy(recipe, verbose) {
 	}
 };
 
-var applyStep = function applyStep(collection, step) {
+var applyStep = function applyStep(collection, step, options) {
 	step = step || {};
 
 	if (operationsMap[step.op]) {
-		collection = operationsMap[step.op](collection, step);
+		collection = operationsMap[step.op].call(this, collection, step, options);
 	} else {
 		console.warn('Not found: ' + step.op + '.');
 	}
@@ -1246,6 +1255,28 @@ var invalidOperation = function invalidOperation(type, name) {
 	console.warn(type + ' is not a valid process type.');
 	return false;
 };
+
+function sushiCook(collection, recipe, parameters) {
+	var _this2 = this;
+
+	if (_Tools2.default.isObject(recipe)) {
+		recipe = [recipe];
+	} else if (!_Tools2.default.isArray(recipe)) {
+		recipe = [];
+	}
+
+	recipe = convertFromLegacy(recipe, this.options.verbose);
+
+	if (parameters) {
+		recipe = this.applyParameters(recipe, parameters);
+	}
+
+	recipe.forEach(function (step) {
+		collection = applyStep.call(_this2, collection, step);
+	});
+
+	return collection;
+}
 
 // Cannot use 'export default' for compatibility issues
 module.exports = function () {
@@ -1312,24 +1343,7 @@ module.exports = function () {
 	}, {
 		key: 'cook',
 		value: function cook(collection, recipe, parameters) {
-
-			if (_Tools2.default.isObject(recipe)) {
-				recipe = [recipe];
-			} else if (!_Tools2.default.isArray(recipe)) {
-				recipe = [];
-			}
-
-			recipe = convertFromLegacy(recipe, this.options.verbose);
-
-			if (parameters) {
-				recipe = this.applyParameters(recipe, parameters);
-			}
-
-			recipe.forEach(function (step) {
-				collection = applyStep(collection, step);
-			});
-
-			return collection;
+			return sushiCook.call(this, collection, recipe, parameters);
 		}
 	}, {
 		key: 'helper',
