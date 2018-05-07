@@ -1,5 +1,6 @@
 import Helper from '../Helper';
 import Tools from '../Tools';
+import FormulaHelper from '../FormulaHelper';
 
 export default {
 
@@ -80,6 +81,10 @@ export default {
 		let mismatchValue = selector.mismatchValue || 0;
 
 		return value.indexOf(selector.match) !== -1 ? matchValue : mismatchValue;
+	},
+
+	formula: (item, selector) => {
+		return FormulaHelper.safeEval(item, selector.expr);
 	}
 
 };
