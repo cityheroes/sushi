@@ -2,11 +2,14 @@ import tools from './Tools';
 import Helper from './Helper';
 
 // Uni operations
-const overturnOperation = (collection, item, pivot, parentDest, childDest) => {
+const overturnOperation = (collection, item, pivot, parentDest, childDest, includeEmpty = false) => {
 	var parent = tools.omit(item, pivot);
 	let child = item[pivot];
 
 	if (tools.isArray(child)) {
+		if (includeEmpty && child.length === 0) {
+			child.push({});
+		}
 		return collection.concat(child.map((subitem) => {
 			if (tools.isObject(subitem)) {
 				subitem[parentDest] = parent;
@@ -18,7 +21,7 @@ const overturnOperation = (collection, item, pivot, parentDest, childDest) => {
 			}
 			return subitem;
 		}));
-	} else if (tools.isObject(child)) {
+	} else if (tools.isObject(child) || (includeEmpty && (child = {}))) {
 		child[parentDest] = parent;
 		collection.push(child);
 		return collection;
@@ -34,12 +37,12 @@ const overturn = (collection, overturn) => {
 	}
 
 	var pivot = overturn.pivot,
-			dest = overturn.dest || 'parent',
-			child = overturn.child || null
-	;
+		dest = overturn.dest || 'parent',
+		child = overturn.child || null,
+		includeEmpty = !!overturn.includeEmpty;
 
 	return collection.reduce((reducedItems, item) => {
-		return overturnOperation(reducedItems, item, pivot, dest, child);
+		return overturnOperation(reducedItems, item, pivot, dest, child, includeEmpty);
 	}, []);
 };
 
