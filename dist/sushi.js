@@ -73,1406 +73,11 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 8);
+/******/ 	return __webpack_require__(__webpack_require__.s = 132);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-
-var isArray = function isArray(value) {
-	return Array.isArray(value);
-};
-
-var isObject = function isObject(obj) {
-	return Object.prototype.toString.call(obj) === '[object Object]';
-};
-
-var omit = function omit(obj, keys) {
-
-	if (!isObject(obj)) {
-		return obj;
-	}
-
-	keys = !isArray(keys) ? [keys] : keys;
-
-	var result = {};
-
-	for (var property in obj) {
-		if (obj.hasOwnProperty(property) && keys.indexOf(property) === -1) {
-			result[property] = obj[property];
-		}
-	}
-
-	return result;
-};
-
-exports.default = {
-	isArray: isArray,
-	isObject: isObject,
-	omit: omit
-};
-
-/***/ }),
-/* 1 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-
-var _Tools = __webpack_require__(0);
-
-var _Tools2 = _interopRequireDefault(_Tools);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var parsePath = function parsePath(pathParam) {
-	return !_Tools2.default.isArray(pathParam) ? [pathParam] : pathParam;
-};
-
-var get = function get(obj, path, defaultValue) {
-
-	var arr = path.split('.');
-
-	while (arr.length && obj) {
-		var comp = arr.shift();
-		var match = new RegExp('(.+)\\[([0-9]*)\\]').exec(comp);
-		if (match !== null && match.length === 3) {
-			var arrayData = { arrName: match[1], arrIndex: match[2] };
-			if (obj[arrayData.arrName] !== undefined) {
-				obj = obj[arrayData.arrName][arrayData.arrIndex];
-			} else {
-				obj = undefined;
-			}
-		} else {
-			if (isNaN(comp)) {
-				obj = obj[comp];
-			} else {
-				obj = obj['undefined' === typeof obj[comp] ? Number(comp) : comp];
-			}
-		}
-	}
-
-	return obj || defaultValue;
-};
-
-/**
- * @todo Enable same path options as get().
- */
-var set = function set(obj, path, value) {
-
-	path = path.split('.');
-
-	var nested = obj,
-	    key,
-	    index = -1,
-	    length = path.length,
-	    lastIndex = length - 1;
-
-	while (nested !== null && ++index < length) {
-
-		key = path[index];
-
-		if (index === lastIndex) {
-			nested[key] = value;
-		} else {
-			nested[key] = typeof nested[key] !== 'undefined' ? nested[key] : {};
-		}
-
-		nested = nested[key];
-	}
-
-	return obj;
-};
-
-var extractMap = function extractMap(item, paths, defaultValue) {
-	return parsePath(paths).map(function (path) {
-		return get(item, path, defaultValue);
-	});
-};
-
-var iterateMap = function iterateMap(item, paths, defaultValue, callback) {
-	parsePath(paths).forEach(function (path) {
-		callback(path, get(item, path, defaultValue));
-	});
-};
-
-var wildcardSeparator = '*';
-
-var evalKeys = function evalKeys(keys, value) {
-
-	if (!keys) {
-		return true;
-	}
-
-	keys = _Tools2.default.isArray(keys) ? keys : [keys];
-
-	return keys.reduce(function (previousValidation, key) {
-		var result = false;
-		var firstWildcard = key.indexOf(wildcardSeparator);
-
-		if (firstWildcard !== -1) {
-
-			var lastWildcard = key.lastIndexOf(wildcardSeparator);
-
-			if (lastWildcard !== -1 && firstWildcard !== lastWildcard) {
-				result = value.includes(key.substring(firstWildcard + 1, lastWildcard));
-			} else if (firstWildcard === 0) {
-				result = value.endsWith(key.substr(1));
-			} else if (firstWildcard === key.length - 1) {
-				result = value.startsWith(key.slice(0, -1));
-			}
-		} else {
-			result = value === key;
-		}
-
-		return previousValidation || result;
-	}, false);
-};
-
-var extractKeys = function extractKeys(item, operationKeys) {
-	return Object.keys(item).filter(function (key) {
-		return evalKeys(operationKeys, key);
-	});
-};
-
-var extractKeyValues = function extractKeyValues(item, operationKeys) {
-	return extractKeys(item, operationKeys).map(function (key) {
-		return item[key];
-	});
-};
-
-var getKeys = function getKeys(item, operationKeys) {
-	return Object.keys(item).filter(function (key) {
-		return evalKeys(operationKeys, key);
-	});
-};
-
-var iterateKeys = function iterateKeys(item, operationKeys, callback) {
-	Object.keys(item).forEach(function (key) {
-		if (evalKeys(operationKeys, key)) {
-			callback(key);
-		}
-	});
-};
-
-var evalValue = function evalValue(value, subject) {
-
-	if (_Tools2.default.isArray(subject) || _Tools2.default.isObject(subject)) {
-		return false;
-	}
-
-	if (value.charAt(0) === '!') {
-		return !subject.includes(value.substr(1));
-	} else {
-		return subject.includes(value);
-	}
-};
-
-var evalValues = function evalValues(values, subject) {
-	return values.reduce(function (previousValidation, value) {
-		return previousValidation || evalValue(value, subject);
-	}, false);
-};
-
-var compare = function compare(lvalue, rvalue, operator) {
-
-	operator = operator || 'eq';
-
-	var operators = {
-		'eq': function eq(l, r) {
-			return l === r;
-		},
-		'ne': function ne(l, r) {
-			return l !== r;
-		},
-		'lt': function lt(l, r) {
-			return l < r;
-		},
-		'gt': function gt(l, r) {
-			return l > r;
-		},
-		'le': function le(l, r) {
-			return l <= r;
-		},
-		'ge': function ge(l, r) {
-			return l >= r;
-		}
-	};
-
-	return operators[operator] ? operators[operator](lvalue, rvalue) : null;
-};
-
-var calculate = function calculate(operands, operator) {
-
-	operator = operator || 'sum';
-
-	var operators = {
-		'addition': {
-			method: function method(lvalue, rvalue) {
-				return lvalue + rvalue;
-			},
-			neutral: 0
-		},
-		'subtraction': {
-			method: function method(lvalue, rvalue) {
-				return lvalue - rvalue;
-			},
-			neutral: 0
-		},
-		'division': {
-			method: function method(lvalue, rvalue) {
-				return lvalue / rvalue;
-			},
-			neutral: 1
-		},
-		'multiplication': {
-			method: function method(lvalue, rvalue) {
-				return lvalue * rvalue;
-			},
-			neutral: 1
-		}
-	};
-
-	return operands.reduce(function (memo, value) {
-		value = value === null || value === undefined ? 0 : value;
-		return operators[operator].method(parseFloat(value) || operators[operator].neutral, memo);
-	}, operators[operator].neutral);
-};
-
-var average = function average(values) {
-
-	values = values.filter(function (value) {
-		return value !== null && value !== undefined;
-	});
-
-	if (values.length === 0) {
-		return 0;
-	}
-
-	return calculate(values, 'addition') / values.length;
-};
-
-var compareString = function compareString(lvalue, rvalue, operator) {
-
-	operator = operator || 'eq';
-
-	var operators = {
-		'eq': function eq(l, r) {
-			return l === r;
-		},
-		'ne': function ne(l, r) {
-			return l !== r;
-		},
-		'includes': function includes(l, r) {
-			return l.includes(r);
-		},
-		'startsWith': function startsWith(l, r) {
-			return l.startsWith(r);
-		},
-		'endsWith': function endsWith(l, r) {
-			return l.endsWith(r);
-		}
-	};
-
-	return operators[operator](lvalue, rvalue);
-};
-
-exports.default = {
-	get: get,
-	set: set,
-	extractMap: extractMap,
-	iterateMap: iterateMap,
-	extractKeys: extractKeys,
-	extractKeyValues: extractKeyValues,
-	getKeys: getKeys,
-	iterateKeys: iterateKeys,
-	evalValues: evalValues,
-	compare: compare,
-	calculate: calculate,
-	average: average,
-	compareString: compareString
-};
-
-/***/ }),
-/* 2 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-
-var _Tools = __webpack_require__(0);
-
-var _Tools2 = _interopRequireDefault(_Tools);
-
-var _Helper = __webpack_require__(1);
-
-var _Helper2 = _interopRequireDefault(_Helper);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-// Uni operations
-var overturnOperation = function overturnOperation(collection, item, pivot, parentDest, childDest) {
-	var parent = _Tools2.default.omit(item, pivot);
-	var child = item[pivot];
-
-	if (_Tools2.default.isArray(child)) {
-		return collection.concat(child.map(function (subitem) {
-			if (_Tools2.default.isObject(subitem)) {
-				subitem[parentDest] = parent;
-			} else if (childDest) {
-				var swapSubitem = {};
-				swapSubitem[parentDest] = parent;
-				swapSubitem[childDest] = subitem;
-				subitem = swapSubitem;
-			}
-			return subitem;
-		}));
-	} else if (_Tools2.default.isObject(child)) {
-		child[parentDest] = parent;
-		collection.push(child);
-		return collection;
-	}
-	return collection;
-};
-
-var overturn = function overturn(collection, _overturn) {
-
-	if (!_overturn.pivot) {
-		console.warn('Overturn operation needs a \'pivot\' parameter.');
-		return collection;
-	}
-
-	var pivot = _overturn.pivot,
-	    dest = _overturn.dest || 'parent',
-	    child = _overturn.child || null;
-
-	return collection.reduce(function (reducedItems, item) {
-		return overturnOperation(reducedItems, item, pivot, dest, child);
-	}, []);
-};
-
-var pick = function pick(collection, _pick) {
-
-	return collection.map(function (item) {
-
-		var resultItem = {};
-
-		if (_pick.keys) {
-			_Helper2.default.iterateKeys(item, _pick.keys, function (key) {
-				if (_pick.values && _Helper2.default.evalValues(_pick.values, item[key])) {
-					resultItem[key] = item[key];
-				} else if (!_pick.values) {
-					resultItem[key] = item[key];
-				}
-			});
-		}
-
-		if (_pick.paths) {
-			_Helper2.default.iterateMap(item, _pick.paths, null, function (path, value) {
-				resultItem = _Helper2.default.set(resultItem, path, value);
-			});
-		}
-
-		return resultItem;
-	});
-};
-
-var uniq = function uniq(collection, _uniq) {
-
-	var resultCollection = [],
-	    seen = {};
-
-	if (!_uniq || !_uniq.path) {
-		console.warn('A \'path\' parameter must be provided for uniq operation.');
-		return collection;
-	}
-
-	for (var i = collection.length - 1; i >= 0; i--) {
-		if (seen[_Helper2.default.get(collection[i], _uniq.path)] !== 1) {
-			seen[_Helper2.default.get(collection[i], _uniq.path)] = 1;
-			resultCollection.push(collection[i]);
-		}
-	}
-
-	return resultCollection;
-};
-
-// Multi operations
-var filter = function filter(collection, filters, applyOperation) {
-
-	if (!filters || filters.length === 0) {
-		return collection;
-	}
-
-	return collection.filter(function (item) {
-		return filters.reduce(function (previousResult, filter) {
-			return previousResult && applyOperation('filter', filter.name, item, filter);
-		}, true);
-	});
-};
-
-var sort = function sort(collection, sorters, applyOperation) {
-
-	if (!sorters || sorters.length === 0) {
-		return collection;
-	}
-
-	return collection.sort(function (item) {
-		return sorters.reduce(function (previousResult, sorter) {
-			return previousResult && applyOperation('sorter', sorter.name, item, sorter);
-		}, true);
-	});
-};
-
-var map = function map(collection, mappers, applyOperation) {
-
-	if (!mappers || mappers.length === 0) {
-		return collection;
-	}
-
-	return collection.map(function (item) {
-		mappers.forEach(function (mapper) {
-
-			_Helper2.default.iterateKeys(item, mapper.keys, function (key) {
-				item[key] = applyOperation('mapper', mapper.name, item[key], mapper);
-			});
-		}, {});
-
-		return item;
-	});
-};
-
-var explode = function explode(collection, _explode) {
-	return collection.reduce(function (resultCollection, item) {
-		return resultCollection.concat(Object.keys(item).reduce(function (explodedItem, key) {
-
-			var resultItem = {};
-
-			if (_explode.id) {
-				if (_explode.id.includes(key)) {
-					return explodedItem;
-				}
-
-				resultItem.id = _Helper2.default.get(item, _explode.id);
-			}
-
-			resultItem[_explode.key ? _explode.key : 'key'] = key;
-			resultItem[_explode.value ? _explode.value : 'value'] = item[key];
-
-			explodedItem.push(resultItem);
-
-			return explodedItem;
-		}, []));
-	}, []);
-};
-
-var pivot = function pivot(collection, pivotCont) {
-
-	var aggregationOps = {
-		sum: function sum(previousValue, item) {
-			return previousValue + _Helper2.default.get(item, pivotCont.aggregationPath, 0);
-		},
-		count: function count(previousValue, item) {
-			return previousValue + 1;
-		}
-	};
-
-	var result = [],
-	    tmpHash = {},
-	    tmpColumnHeaders = [],
-	    columnHeader = void 0,
-	    rowSourcePath = pivotCont.rowSourcePath,
-	    rowTargetPath = pivotCont.rowTargetPath || rowSourcePath,
-	    columnPath = pivotCont.columnPath,
-	    includeRowTotal = !!pivotCont.includeRowTotal,
-	    includeColumnTotal = !!pivotCont.includeColumnTotal,
-	    totalRowName = pivotCont.totalRowName || 'Total',
-	    totalColumnName = pivotCont.totalColumnName || 'Total',
-	    aggregationOp = aggregationOps[pivotCont.aggregationOp || 'count'];
-
-	var item = void 0,
-	    processedItem = void 0,
-	    processedItemId = void 0,
-	    previousValue = void 0;
-	for (var i = 0, len = collection.length; i < len; i++) {
-		item = collection[i];
-
-		processedItemId = _Helper2.default.get(item, rowSourcePath, undefined);
-
-		if (!processedItemId) {
-			continue;
-		} else if (!tmpHash[processedItemId]) {
-			processedItem = {};
-
-			for (var j = tmpColumnHeaders.length - 1; j >= 0; j--) {
-				processedItem[tmpColumnHeaders[j]] = 0;
-			}
-
-			tmpHash[processedItemId] = processedItem;
-			result.push(processedItem);
-			_Helper2.default.set(processedItem, rowTargetPath, processedItemId);
-		} else {
-			processedItem = tmpHash[processedItemId];
-		}
-
-		columnHeader = _Helper2.default.get(item, columnPath, undefined);
-		if (columnHeader) {
-
-			if (tmpColumnHeaders.indexOf(columnHeader) === -1) {
-				tmpColumnHeaders.push(columnHeader);
-				for (var k = result.length - 1; k >= 0; k--) {
-					result[k][columnHeader] = 0;
-				}
-			}
-
-			previousValue = processedItem[columnHeader] || 0;
-			processedItem[columnHeader] = aggregationOp(previousValue, item);
-		}
-	}
-
-	if (includeRowTotal || includeColumnTotal) {
-		var i;
-		var i, length;
-		var j;
-
-		(function () {
-
-			var resultItem = void 0,
-			    columnTotalItem = {};
-
-			if (includeColumnTotal) {
-				for (i = tmpColumnHeaders.length - 1; i >= 0; i--) {
-					columnTotalItem[tmpColumnHeaders[i]] = 0;
-				}
-				_Helper2.default.set(columnTotalItem, rowTargetPath, totalColumnName);
-			}
-
-			for (i = 0, length = result.length; i < length; i++) {
-
-				resultItem = result[i];
-
-				if (includeColumnTotal) {
-					for (j = tmpColumnHeaders.length - 1; j >= 0; j--) {
-						columnHeader = tmpColumnHeaders[j];
-						columnTotalItem[columnHeader] += resultItem[columnHeader];
-					}
-				}
-
-				if (includeRowTotal) {
-					resultItem[totalRowName] = tmpColumnHeaders.reduce(function (partial, columnHeader) {
-						return partial + resultItem[columnHeader];
-					}, 0);
-				}
-			}
-
-			if (includeColumnTotal) {
-				if (includeRowTotal) {
-					columnTotalItem[totalRowName] = tmpColumnHeaders.reduce(function (partial, columnHeader) {
-						return partial + columnTotalItem[columnHeader];
-					}, 0);
-				}
-				result.push(columnTotalItem);
-			}
-		})();
-	}
-
-	return result;
-};
-
-var implode = function implode(collection, _implode) {
-	return collection.reduce(function (resultCollection, item) {
-		return resultCollection.concat(Object.keys(item).reduce(function (implodedItem, key) {
-
-			var resultItem = {};
-
-			if (_implode.id) {
-				if (_implode.id.includes(key)) {
-					return implodedItem;
-				}
-
-				resultItem.id = _Helper2.default.get(item, _implode.id);
-			}
-
-			resultItem[_implode.key ? _implode.key : 'key'] = key;
-			resultItem[_implode.value ? _implode.value : 'value'] = item[key];
-
-			implodedItem.push(resultItem);
-
-			return implodedItem;
-		}, []));
-	}, []);
-};
-
-var select = function select(collection, selectors, applyOperation) {
-
-	if (!selectors || selectors.length === 0) {
-		return collection;
-	}
-
-	return collection.map(function (item) {
-		return selectors.reduce(function (resultItem, selector) {
-			resultItem[selector.dest] = applyOperation('selector', selector.name, item, selector);
-			return resultItem;
-		}, {});
-	});
-};
-
-var reduce = function reduce(collection, reducers, applyOperation) {
-
-	if (!reducers || reducers.length === 0) {
-		return collection;
-	}
-
-	return reducers.reduce(function (resultItem, reducer) {
-
-		var start = reducer.start || 0;
-
-		if (reducer.group && reducer.path) {
-
-			var auxResult = resultItem;
-
-			if (reducer.dest) {
-				resultItem[reducer.dest] = {};
-				auxResult = resultItem[reducer.dest];
-			}
-
-			collection.forEach(function (item, index) {
-				var groupKey = _Helper2.default.get(item, reducer.group);
-
-				auxResult[groupKey] = applyOperation('reducer', reducer.name, reducer, auxResult[groupKey] || start, _Helper2.default.get(item, reducer.path), index, collection.length);
-			});
-		} else if (reducer.path && reducer.dest) {
-			resultItem[reducer.dest] = collection.reduce(function (memo, item, index) {
-
-				return applyOperation('reducer', reducer.name, reducer, memo, _Helper2.default.get(item, reducer.path), index, collection.length);
-			}, start);
-		} else if (reducer.keys) {
-
-			collection.forEach(function (item, index) {
-				_Helper2.default.iterateKeys(item, reducer.keys, function (key) {
-
-					resultItem[key] = applyOperation('reducer', reducer.name, reducer, resultItem[key] || start, item[key], index, collection.length);
-				});
-			});
-		}
-
-		return resultItem;
-	}, {});
-};
-
-// Cheff API
-exports.default = {
-	overturn: overturn,
-	filter: filter,
-	pick: pick,
-	sort: sort,
-	map: map,
-	explode: explode,
-	select: select,
-	uniq: uniq,
-	reduce: reduce,
-	pivot: pivot
-};
-
-/***/ }),
-/* 3 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
-var _Tools = __webpack_require__(0);
-
-var _Tools2 = _interopRequireDefault(_Tools);
-
-var _Helper = __webpack_require__(1);
-
-var _Helper2 = _interopRequireDefault(_Helper);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var applyMatch = function applyMatch(value, match, filterFunction) {
-	if (_Tools2.default.isArray(match)) {
-		return match.reduce(function (memo, matchItem) {
-			return memo || filterFunction(value, matchItem);
-		}, false);
-	} else {
-		return filterFunction(value, match);
-	}
-};
-
-exports.default = {
-
-	match: function match(item, filter) {
-		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
-			return value === match;
-		});
-	},
-
-	mismatch: function mismatch(item, filter) {
-		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
-			return value !== match;
-		});
-	},
-
-	matchType: function matchType(item, filter) {
-		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
-			return (typeof value === 'undefined' ? 'undefined' : _typeof(value)) === match;
-		});
-	},
-
-	mismatchType: function mismatchType(item, filter) {
-		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
-			return (typeof value === 'undefined' ? 'undefined' : _typeof(value)) !== match;
-		});
-	},
-
-	includes: function includes(item, filter) {
-		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
-			return value.includes(match);
-		});
-	},
-
-	excludes: function excludes(item, filter) {
-		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
-			return !value.includes(match);
-		});
-	},
-
-	compare: function compare(item, filter) {
-		return _Helper2.default.compare(_Helper2.default.get(item, filter.path), filter.match, filter.operator);
-	},
-
-	start: function start(item, filter) {
-		return applyMatch(_Helper2.default.get(item, filter.path, ''), filter.match, function (value, match) {
-			return value.indexOf(match) === 0;
-		});
-	},
-
-	end: function end(item, filter) {
-		return applyMatch(_Helper2.default.get(item, filter.path, ''), filter.match, function (value, match) {
-			return value.indexOf(match, value.length - match.length) !== -1;
-		});
-	}
-
-};
-
-/***/ }),
-/* 4 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-exports.default = {
-
-	pass: function pass(value, mapper) {
-		return value;
-	},
-
-	replace: function replace(value, mapper) {
-
-		if (typeof value !== 'string') {
-			return value;
-		}
-
-		var replacer = mapper.match || '';
-
-		if (mapper.regex) {
-			replacer = new RegExp(mapper.regex, 'i');
-		}
-
-		return value.replace(replacer, mapper.replacement || '');
-	},
-
-	substring: function substring(value, mapper) {
-
-		if (typeof value !== 'string') {
-			return value;
-		}
-
-		return value.substring(mapper.start || 0, mapper.end || undefined);
-	},
-
-	translate: function translate(value, mapper) {
-		var conversions = mapper.conversions || mapper.convertions || {};
-		return typeof conversions[value] !== 'undefined' ? conversions[value] : value;
-	},
-
-	classify: function classify(value, mapper) {
-		var conversions = mapper.conversions || mapper.convertions || {};
-		var roundedValue = Math.round(value);
-		return typeof conversions[roundedValue] !== 'undefined' ? conversions[roundedValue] : value;
-	}
-
-};
-
-/***/ }),
-/* 5 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-
-var _Tools = __webpack_require__(0);
-
-var _Tools2 = _interopRequireDefault(_Tools);
-
-var _Helper = __webpack_require__(1);
-
-var _Helper2 = _interopRequireDefault(_Helper);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var matchBehavior = function matchBehavior(reducer, previousValue, value, reduceOperation) {
-	if (reducer.match) {
-		if (reducer.match === value) {
-			return reduceOperation();
-		} else {
-			return previousValue;
-		}
-	} else {
-		return reduceOperation();
-	}
-};
-
-exports.default = {
-
-	count: function count(reducer, previousValue, value) {
-		return matchBehavior(reducer, previousValue, value, function () {
-			return value ? previousValue + 1 : previousValue;
-		});
-	},
-
-	operation: function operation(reducer, previousValue, value) {
-		return matchBehavior(reducer, previousValue, value, function () {
-			return _Helper2.default.calculate([value, previousValue], reducer.operator);
-		});
-	},
-
-	average: function average(reducer, previousValue, value, index, size) {
-		return matchBehavior(reducer, previousValue, value, function () {
-			var result = _Helper2.default.calculate([value, previousValue], 'addition');
-
-			if (index < size - 1) {
-				return result;
-			} else {
-				return result / size;
-			}
-		});
-	},
-
-	sum: function sum(reducer, previousValue, value) {
-		return matchBehavior(reducer, previousValue, value, function () {
-			return _Helper2.default.calculate([value, previousValue], 'addition');
-		});
-	},
-
-	sumAndOperation: function sumAndOperation(reducer, previousValue, value) {
-		var sum = _Helper2.default.calculate([value, previousValue], 'addition');
-
-		return _Helper2.default.calculate([sum, reducer.operand], reducer.operator);
-	},
-
-	array: function array(reducer, previousValue, value) {
-		previousValue = _Tools2.default.isArray(previousValue) ? previousValue : [];
-		previousValue.push(value);
-		return previousValue;
-	}
-
-};
-
-/***/ }),
-/* 6 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-
-var _Helper = __webpack_require__(1);
-
-var _Helper2 = _interopRequireDefault(_Helper);
-
-var _Tools = __webpack_require__(0);
-
-var _Tools2 = _interopRequireDefault(_Tools);
-
-var _FormulaHelper = __webpack_require__(10);
-
-var _FormulaHelper2 = _interopRequireDefault(_FormulaHelper);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-exports.default = {
-
-	extract: function extract(item, selector) {
-		return _Helper2.default.get(item, selector.path, selector.default);
-	},
-
-	join: function join(item, selector) {
-		return selector.paths.map(function (path) {
-			return _Helper2.default.get(item, path, selector.default);
-		}).join(selector.separator || ' ');
-	},
-
-	split: function split(item, selector) {
-		return selector.paths.map(function (path) {
-			return _Helper2.default.get(item, path, selector.default).split(selector.separator || ' ');
-		});
-	},
-
-	format: function format(item, selector) {
-		return selector.paths.reduce(function (partialFormat, path, index) {
-			return partialFormat.replace('{' + index + '}', _Helper2.default.get(item, path, selector.default));
-		}, selector.format || '');
-	},
-
-	compare: function compare(item, selector) {
-		var comparison = _Helper2.default.compare(_Helper2.default.get(item, selector.path), selector.match, selector.operator);
-		return comparison ? selector.truth : selector.false;
-	},
-
-	operation: function operation(item, selector) {
-		if (selector.path) {
-			return _Helper2.default.calculate([_Helper2.default.get(item, selector.path), selector.operand], selector.operator);
-		} else if (selector.paths) {
-			return _Helper2.default.calculate(_Helper2.default.extractMap(item, selector.paths), selector.operator);
-		} else if (selector.keys) {
-			return _Helper2.default.calculate(_Helper2.default.extractKeyValues(item, selector.keys), selector.operator);
-		} else {
-			return 0;
-		}
-	},
-
-	average: function average(item, selector) {
-		if (selector.paths) {
-			return _Helper2.default.average(_Helper2.default.extractMap(item, selector.paths));
-		} else if (selector.keys) {
-			return _Helper2.default.average(_Helper2.default.extractKeyValues(item, selector.keys));
-		} else {
-			return 0;
-		}
-	},
-
-	existsInArray: function existsInArray(item, selector) {
-
-		var value = _Helper2.default.get(item, selector.path);
-
-		if (!_Tools2.default.isArray(value)) {
-			return value;
-		}
-
-		var matchValue = selector.matchValue || 1;
-		var mismatchValue = selector.mismatchValue || 0;
-
-		return value.indexOf(selector.match) !== -1 ? matchValue : mismatchValue;
-	},
-
-	formula: function formula(item, selector) {
-		return _FormulaHelper2.default.safeEval(item, selector.expr);
-	}
-
-};
-
-/***/ }),
-/* 7 */,
-/* 8 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-// import coreSorters from './CoreOperations/sorters';
-
-
-var _Cheff = __webpack_require__(2);
-
-var _Cheff2 = _interopRequireDefault(_Cheff);
-
-var _Helper = __webpack_require__(1);
-
-var _Helper2 = _interopRequireDefault(_Helper);
-
-var _FormulaHelper = __webpack_require__(10);
-
-var _FormulaHelper2 = _interopRequireDefault(_FormulaHelper);
-
-var _filters = __webpack_require__(3);
-
-var _filters2 = _interopRequireDefault(_filters);
-
-var _mappers = __webpack_require__(4);
-
-var _mappers2 = _interopRequireDefault(_mappers);
-
-var _selectors = __webpack_require__(6);
-
-var _selectors2 = _interopRequireDefault(_selectors);
-
-var _reducers = __webpack_require__(5);
-
-var _reducers2 = _interopRequireDefault(_reducers);
-
-var _Tools = __webpack_require__(0);
-
-var _Tools2 = _interopRequireDefault(_Tools);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var operationsStore = {
-	filters: _filters2.default,
-	mappers: _mappers2.default,
-	selectors: _selectors2.default,
-	reducers: _reducers2.default
-};
-
-var operationsMap = {
-	overturn: function overturn(collection, step) {
-		return _Cheff2.default.overturn(collection, step.cont);
-	},
-	filters: function filters(collection, step) {
-		return _Cheff2.default.filter(collection, step.cont, applyOperation);
-	},
-	pick: function pick(collection, step) {
-		return _Cheff2.default.pick(collection, step.cont);
-	},
-	// sorters: (collection, step) => {
-	// 	return Cheff.sort(collection, step.cont, applyOperation);
-	// },
-	mappers: function mappers(collection, step) {
-		return _Cheff2.default.map(collection, step.cont, applyOperation);
-	},
-	explode: function explode(collection, step) {
-		return _Cheff2.default.explode(collection, step.cont);
-	},
-	selectors: function selectors(collection, step) {
-		return _Cheff2.default.select(collection, step.cont, applyOperation);
-	},
-	uniq: function uniq(collection, step) {
-		return _Cheff2.default.uniq(collection, step.cont);
-	},
-	reducers: function reducers(collection, step) {
-		return [_Cheff2.default.reduce(collection, step.cont, applyOperation)];
-	},
-	pivot: function pivot(collection, step) {
-		return _Cheff2.default.pivot(collection, step.cont, applyOperation);
-	},
-	nest: function nest(collection, step) {
-		var _this = this;
-
-		var sourcePath = step.path,
-		    resultPath = step.dest || sourcePath;
-		return collection.map(function (element) {
-			return _Helper2.default.set(element, resultPath, sushiCook.call(_this, _Helper2.default.get(element, sourcePath, []), step.cont));
-		});
-	}
-};
-
-var operationsList = ['overturn', 'filters', 'pick', 'sorters', 'mappers', 'explode', 'selectors', 'uniq', 'reducers', 'pivot'];
-
-var convertFromLegacy = function convertFromLegacy(recipe, verbose) {
-	var testStep = recipe[0];
-	if (testStep && operationsList.reduce(function (memo, operationName) {
-		return memo || !!testStep[operationName];
-	}, false)) {
-
-		var newRecipe = [];
-
-		recipe.forEach(function (step) {
-			Object.keys(step).forEach(function (key) {
-				newRecipe.push({
-					op: key,
-					cont: step[key]
-				});
-			});
-		});
-
-		if (verbose) {
-			console.warn('Legacy recipe found.');
-			console.log('New recipe :');
-			console.log(JSON.stringify(newRecipe, null, 3));
-		}
-
-		return newRecipe;
-	} else {
-		return recipe;
-	}
-};
-
-var parseExpressions = function parseExpressions(recipe) {
-	recipe.forEach(function (step) {
-		if (step.op === 'selectors') {
-			step.cont.forEach(function (selector) {
-				if (selector.expr) {
-					selector.expr = _FormulaHelper2.default.parseExpression(selector.expr);
-				}
-			});
-		}
-	});
-};
-
-var applyStep = function applyStep(collection, step, options) {
-	step = step || {};
-
-	if (operationsMap[step.op]) {
-		collection = operationsMap[step.op].call(this, collection, step, options);
-	} else {
-		console.warn('Not found: ' + step.op + '.');
-	}
-
-	return collection;
-};
-
-var applyOperation = function applyOperation(type, name) {
-	for (var _len = arguments.length, rest = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-		rest[_key - 2] = arguments[_key];
-	}
-
-	if (operationsStore[type + 's'][name]) {
-		return operationsStore[type + 's'][name].apply(undefined, rest);
-	}
-
-	return notFound(type, name);
-};
-
-var notFound = function notFound(type, name) {
-	console.warn(type + ' ' + name + ' was not found in the available processes.');
-	return false;
-};
-
-var invalidOperation = function invalidOperation(type, name) {
-	console.warn(type + ' is not a valid process type.');
-	return false;
-};
-
-function sushiCook(collection, recipe, parameters) {
-	var _this2 = this;
-
-	if (_Tools2.default.isObject(recipe)) {
-		recipe = [recipe];
-	} else if (!_Tools2.default.isArray(recipe)) {
-		recipe = [];
-	}
-
-	recipe = convertFromLegacy(recipe, this.options.verbose);
-	parseExpressions(recipe);
-
-	if (parameters) {
-		recipe = this.applyParameters(recipe, parameters);
-	}
-
-	recipe.forEach(function (step) {
-		collection = applyStep.call(_this2, collection, step);
-	});
-
-	return collection;
-}
-
-// Cannot use 'export default' for compatibility issues
-module.exports = function () {
-	function Sushi() {
-		var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
-		_classCallCheck(this, Sushi);
-
-		this.options = options;
-	}
-
-	_createClass(Sushi, [{
-		key: 'addOperationsBundle',
-		value: function addOperationsBundle(processesBundle) {
-			this.addOperations('filter', processesBundle.filters);
-			this.addOperations('picker', processesBundle.pickers);
-			this.addOperations('mapper', processesBundle.mappers);
-			this.addOperations('reducer', processesBundle.reducers);
-		}
-	}, {
-		key: 'addOperations',
-		value: function addOperations(type, processes) {
-			for (var name in processes) {
-				this.addOperation(type, name, processes[name]);
-			}
-		}
-	}, {
-		key: 'addOperation',
-		value: function addOperation(type, name, method) {
-
-			if (!type) {
-				return invalidOperation();
-			}
-
-			operationsStore[type + 's'][name] = method;
-		}
-	}, {
-		key: 'addFilter',
-		value: function addFilter(name, method) {
-			this.addOperation('filter', name, method);
-		}
-	}, {
-		key: 'addMapper',
-		value: function addMapper(name, method) {
-			this.addOperation('mapper', name, method);
-		}
-	}, {
-		key: 'addReducer',
-		value: function addReducer(name, method) {
-			this.addOperation('reducer', name, method);
-		}
-	}, {
-		key: 'applyParameters',
-		value: function applyParameters(recipe, parameters) {
-
-			var serializedRecipe = JSON.stringify(recipe);
-
-			for (var parameterName in parameters) {
-				serializedRecipe = serializedRecipe.replace(new RegExp('#' + parameterName + '#', 'g'), parameters[parameterName]);
-			}
-
-			return JSON.parse(serializedRecipe);
-		}
-	}, {
-		key: 'cook',
-		value: function cook(collection, recipe, parameters) {
-			return sushiCook.call(this, collection, recipe, parameters);
-		}
-	}, {
-		key: 'helper',
-		value: function helper() {
-			return _Helper2.default;
-		}
-	}]);
-
-	return Sushi;
-}();
-
-/***/ }),
-/* 9 */,
-/* 10 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-
-var _Helper = __webpack_require__(1);
-
-var _Helper2 = _interopRequireDefault(_Helper);
-
-var _moment = __webpack_require__(11);
-
-var _moment2 = _interopRequireDefault(_moment);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-var _safeEval = function () {
-	var _dateDiffMeasurements2;
-
-	var _dateDiffMeasurements = (_dateDiffMeasurements2 = {
-		years: 'years',
-		months: 'months',
-		weeks: 'weeks',
-		days: 'days',
-		hours: 'hours',
-		minutes: 'minutes',
-		seconds: 'seconds',
-		y: 'years',
-		m: 'months',
-		w: 'weeks',
-		d: 'days',
-		h: 'hours'
-	}, _defineProperty(_dateDiffMeasurements2, 'm', 'minutes'), _defineProperty(_dateDiffMeasurements2, 's', 'seconds'), _dateDiffMeasurements2);
-
-	function now() {
-		return new _moment2.default().format();
-	}
-
-	function dateDiff(dateA, dateB, type) {
-		type = _dateDiffMeasurements[type] || 'days';
-		return (0, _moment2.default)(dateA).diff((0, _moment2.default)(dateB), type);
-	}
-
-	return function (item, expression) {
-		var values = [];
-		for (var i = expression.paths.length - 1; i >= 0; i--) {
-			values[i] = _Helper2.default.get(item, expression.paths[i]);
-		}
-		return eval(expression.parsedExpr);
-	};
-}();
-
-exports.default = function () {
-
-	var exprVarsRegex = /\{\{(.+)\}\}/g;
-
-	return {
-		safeEval: function safeEval(item, expression) {
-			return _safeEval(item, expression);
-		},
-		parseExpression: function parseExpression(expression) {
-			if ('string' === typeof expression) {
-				var variableHash = {};
-				var pathsArray = [];
-				var parsedExpr = {
-					originalExpr: expression,
-					parsedExpr: expression.replace(exprVarsRegex, function (variable, path) {
-						if (!variableHash[path]) {
-							variableHash[path] = pathsArray.length;
-							pathsArray.push(path);
-						}
-						return 'values[' + variableHash[path] + ']';
-					}),
-					paths: pathsArray
-				};
-				expression = parsedExpr;
-			}
-			return expression;
-		}
-	};
-}();
-
-/***/ }),
-/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(module) {var require;//! moment.js
@@ -3310,7 +1915,7 @@ exports.default = function () {
             try {
                 oldLocale = globalLocale._abbr;
                 var aliasedRequire = require;
-                __webpack_require__(135)("./" + name);
+                __webpack_require__(133)("./" + name);
                 getSetGlobalLocale(oldLocale);
             } catch (e) {}
         }
@@ -5982,16 +4587,434 @@ exports.default = function () {
 
 })));
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(136)(module)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(134)(module)))
 
 /***/ }),
-/* 12 */
+/* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+
+var _Tools = __webpack_require__(2);
+
+var _Tools2 = _interopRequireDefault(_Tools);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var parsePath = function parsePath(pathParam) {
+	return !_Tools2.default.isArray(pathParam) ? [pathParam] : pathParam;
+};
+
+var get = function get(obj, path, defaultValue) {
+
+	var arr = path.split('.');
+
+	while (arr.length && obj) {
+		var comp = arr.shift();
+		var match = new RegExp('(.+)\\[([0-9]*)\\]').exec(comp);
+		if (match !== null && match.length === 3) {
+			var arrayData = { arrName: match[1], arrIndex: match[2] };
+			if (obj[arrayData.arrName] !== undefined) {
+				obj = obj[arrayData.arrName][arrayData.arrIndex];
+			} else {
+				obj = undefined;
+			}
+		} else {
+			if (isNaN(comp)) {
+				obj = obj[comp];
+			} else {
+				obj = obj['undefined' === typeof obj[comp] ? Number(comp) : comp];
+			}
+		}
+	}
+
+	return obj || defaultValue;
+};
+
+/**
+ * @todo Enable same path options as get().
+ */
+var set = function set(obj, path, value) {
+
+	path = path.split('.');
+
+	var nested = obj,
+	    key,
+	    index = -1,
+	    length = path.length,
+	    lastIndex = length - 1;
+
+	while (nested !== null && ++index < length) {
+
+		key = path[index];
+
+		if (index === lastIndex) {
+			nested[key] = value;
+		} else {
+			nested[key] = typeof nested[key] !== 'undefined' ? nested[key] : {};
+		}
+
+		nested = nested[key];
+	}
+
+	return obj;
+};
+
+var extractMap = function extractMap(item, paths, defaultValue) {
+	return parsePath(paths).map(function (path) {
+		return get(item, path, defaultValue);
+	});
+};
+
+var iterateMap = function iterateMap(item, paths, defaultValue, callback) {
+	parsePath(paths).forEach(function (path) {
+		callback(path, get(item, path, defaultValue));
+	});
+};
+
+var wildcardSeparator = '*';
+
+var evalKeys = function evalKeys(keys, value) {
+
+	if (!keys) {
+		return true;
+	}
+
+	keys = _Tools2.default.isArray(keys) ? keys : [keys];
+
+	return keys.reduce(function (previousValidation, key) {
+		var result = false;
+		var firstWildcard = key.indexOf(wildcardSeparator);
+
+		if (firstWildcard !== -1) {
+
+			var lastWildcard = key.lastIndexOf(wildcardSeparator);
+
+			if (lastWildcard !== -1 && firstWildcard !== lastWildcard) {
+				result = value.includes(key.substring(firstWildcard + 1, lastWildcard));
+			} else if (firstWildcard === 0) {
+				result = value.endsWith(key.substr(1));
+			} else if (firstWildcard === key.length - 1) {
+				result = value.startsWith(key.slice(0, -1));
+			}
+		} else {
+			result = value === key;
+		}
+
+		return previousValidation || result;
+	}, false);
+};
+
+var extractKeys = function extractKeys(item, operationKeys) {
+	return Object.keys(item).filter(function (key) {
+		return evalKeys(operationKeys, key);
+	});
+};
+
+var extractKeyValues = function extractKeyValues(item, operationKeys) {
+	return extractKeys(item, operationKeys).map(function (key) {
+		return item[key];
+	});
+};
+
+var getKeys = function getKeys(item, operationKeys) {
+	return Object.keys(item).filter(function (key) {
+		return evalKeys(operationKeys, key);
+	});
+};
+
+var iterateKeys = function iterateKeys(item, operationKeys, callback) {
+	Object.keys(item).forEach(function (key) {
+		if (evalKeys(operationKeys, key)) {
+			callback(key);
+		}
+	});
+};
+
+var evalValue = function evalValue(value, subject) {
+
+	if (_Tools2.default.isArray(subject) || _Tools2.default.isObject(subject)) {
+		return false;
+	}
+
+	if (value.charAt(0) === '!') {
+		return !subject.includes(value.substr(1));
+	} else {
+		return subject.includes(value);
+	}
+};
+
+var evalValues = function evalValues(values, subject) {
+	return values.reduce(function (previousValidation, value) {
+		return previousValidation || evalValue(value, subject);
+	}, false);
+};
+
+var compare = function compare(lvalue, rvalue, operator) {
+
+	operator = operator || 'eq';
+
+	var operators = {
+		'eq': function eq(l, r) {
+			return l === r;
+		},
+		'ne': function ne(l, r) {
+			return l !== r;
+		},
+		'lt': function lt(l, r) {
+			return l < r;
+		},
+		'gt': function gt(l, r) {
+			return l > r;
+		},
+		'le': function le(l, r) {
+			return l <= r;
+		},
+		'ge': function ge(l, r) {
+			return l >= r;
+		}
+	};
+
+	return operators[operator] ? operators[operator](lvalue, rvalue) : null;
+};
+
+var calculate = function calculate(operands, operator) {
+
+	operator = operator || 'sum';
+
+	var operators = {
+		'addition': {
+			method: function method(lvalue, rvalue) {
+				return lvalue + rvalue;
+			},
+			neutral: 0
+		},
+		'subtraction': {
+			method: function method(lvalue, rvalue) {
+				return lvalue - rvalue;
+			},
+			neutral: 0
+		},
+		'division': {
+			method: function method(lvalue, rvalue) {
+				return lvalue / rvalue;
+			},
+			neutral: 1
+		},
+		'multiplication': {
+			method: function method(lvalue, rvalue) {
+				return lvalue * rvalue;
+			},
+			neutral: 1
+		}
+	};
+
+	return operands.reduce(function (memo, value) {
+		value = value === null || value === undefined ? 0 : value;
+		return operators[operator].method(parseFloat(value) || operators[operator].neutral, memo);
+	}, operators[operator].neutral);
+};
+
+var average = function average(values) {
+
+	values = values.filter(function (value) {
+		return value !== null && value !== undefined;
+	});
+
+	if (values.length === 0) {
+		return 0;
+	}
+
+	return calculate(values, 'addition') / values.length;
+};
+
+var compareString = function compareString(lvalue, rvalue, operator) {
+
+	operator = operator || 'eq';
+
+	var operators = {
+		'eq': function eq(l, r) {
+			return l === r;
+		},
+		'ne': function ne(l, r) {
+			return l !== r;
+		},
+		'includes': function includes(l, r) {
+			return l.includes(r);
+		},
+		'startsWith': function startsWith(l, r) {
+			return l.startsWith(r);
+		},
+		'endsWith': function endsWith(l, r) {
+			return l.endsWith(r);
+		}
+	};
+
+	return operators[operator](lvalue, rvalue);
+};
+
+exports.default = {
+	get: get,
+	set: set,
+	extractMap: extractMap,
+	iterateMap: iterateMap,
+	extractKeys: extractKeys,
+	extractKeyValues: extractKeyValues,
+	getKeys: getKeys,
+	iterateKeys: iterateKeys,
+	evalValues: evalValues,
+	compare: compare,
+	calculate: calculate,
+	average: average,
+	compareString: compareString
+};
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+
+var isArray = function isArray(value) {
+	return Array.isArray(value);
+};
+
+var isObject = function isObject(obj) {
+	return Object.prototype.toString.call(obj) === '[object Object]';
+};
+
+var omit = function omit(obj, keys) {
+
+	if (!isObject(obj)) {
+		return obj;
+	}
+
+	keys = !isArray(keys) ? [keys] : keys;
+
+	var result = {};
+
+	for (var property in obj) {
+		if (obj.hasOwnProperty(property) && keys.indexOf(property) === -1) {
+			result[property] = obj[property];
+		}
+	}
+
+	return result;
+};
+
+exports.default = {
+	isArray: isArray,
+	isObject: isObject,
+	omit: omit
+};
+
+/***/ }),
+/* 3 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+
+var _Helper = __webpack_require__(1);
+
+var _Helper2 = _interopRequireDefault(_Helper);
+
+var _moment = __webpack_require__(0);
+
+var _moment2 = _interopRequireDefault(_moment);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+var _safeEval = function () {
+	var _dateDiffMeasurements2;
+
+	var _dateDiffMeasurements = (_dateDiffMeasurements2 = {
+		years: 'years',
+		months: 'months',
+		weeks: 'weeks',
+		days: 'days',
+		hours: 'hours',
+		minutes: 'minutes',
+		seconds: 'seconds',
+		y: 'years',
+		m: 'months',
+		w: 'weeks',
+		d: 'days',
+		h: 'hours'
+	}, _defineProperty(_dateDiffMeasurements2, 'm', 'minutes'), _defineProperty(_dateDiffMeasurements2, 's', 'seconds'), _dateDiffMeasurements2);
+
+	function now() {
+		return new _moment2.default().format();
+	}
+
+	function dateDiff(dateA, dateB, type) {
+		type = _dateDiffMeasurements[type] || 'days';
+		return (0, _moment2.default)(dateA).diff((0, _moment2.default)(dateB), type);
+	}
+
+	return function (item, expression) {
+		var values = [];
+		for (var i = expression.paths.length - 1; i >= 0; i--) {
+			values[i] = _Helper2.default.get(item, expression.paths[i]);
+		}
+		return eval(expression.parsedExpr);
+	};
+}();
+
+exports.default = function () {
+
+	var exprVarsRegex = /\{\{(.+)\}\}/g;
+
+	return {
+		safeEval: function safeEval(item, expression) {
+			return _safeEval(item, expression);
+		},
+		parseExpression: function parseExpression(expression) {
+			if ('string' === typeof expression) {
+				var variableHash = {};
+				var pathsArray = [];
+				var parsedExpr = {
+					originalExpr: expression,
+					parsedExpr: expression.replace(exprVarsRegex, function (variable, path) {
+						if (!variableHash[path]) {
+							variableHash[path] = pathsArray.length;
+							pathsArray.push(path);
+						}
+						return 'values[' + variableHash[path] + ']';
+					}),
+					paths: pathsArray
+				};
+				expression = parsedExpr;
+			}
+			return expression;
+		}
+	};
+}();
+
+/***/ }),
+/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -6062,13 +5085,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 13 */
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -6125,13 +5148,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 14 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -6188,13 +5211,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 15 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -6314,13 +5337,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 16 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -6377,13 +5400,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 17 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -6485,13 +5508,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 18 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -6548,13 +5571,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 19 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -6687,13 +5710,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 20 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -6796,13 +5819,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 21 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -6932,13 +5955,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 22 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -7026,13 +6049,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 23 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -7088,13 +6111,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 24 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -7211,13 +6234,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 25 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -7334,13 +6357,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 26 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -7446,13 +6469,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 27 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -7601,13 +6624,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 28 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -7693,13 +6716,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 29 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -7876,13 +6899,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 30 */
+/* 22 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -7943,13 +6966,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 31 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -8027,13 +7050,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 32 */
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -8091,13 +7114,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 33 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -8171,13 +7194,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 34 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -8251,13 +7274,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 35 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -8331,13 +7354,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 36 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -8434,13 +7457,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 37 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -8538,13 +7561,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 38 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -8609,13 +7632,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 39 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -8676,13 +7699,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 40 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -8747,13 +7770,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 41 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -8818,13 +7841,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 42 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -8884,13 +7907,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 43 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -8955,13 +7978,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 44 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -9030,13 +8053,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 45 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -9126,13 +8149,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 46 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -9213,13 +8236,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 47 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -9309,13 +8332,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 48 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -9393,13 +8416,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 49 */
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -9463,13 +8486,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 50 */
+/* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -9573,13 +8596,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 51 */
+/* 43 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -9686,13 +8709,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 52 */
+/* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -9750,13 +8773,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 53 */
+/* 45 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -9828,13 +8851,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 54 */
+/* 46 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -9910,13 +8933,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 55 */
+/* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -9997,13 +9020,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 56 */
+/* 48 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -10076,13 +9099,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 57 */
+/* 49 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -10156,13 +9179,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 58 */
+/* 50 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -10237,13 +9260,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 59 */
+/* 51 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -10364,13 +9387,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 60 */
+/* 52 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -10492,13 +9515,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 61 */
+/* 53 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -10593,13 +9616,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 62 */
+/* 54 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -10721,13 +9744,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 63 */
+/* 55 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -10879,13 +9902,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 64 */
+/* 56 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -10993,13 +10016,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 65 */
+/* 57 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -11092,13 +10115,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 66 */
+/* 58 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -11178,13 +10201,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 67 */
+/* 59 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -11314,13 +10337,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 68 */
+/* 60 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -11387,13 +10410,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 69 */
+/* 61 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -11483,13 +10506,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 70 */
+/* 62 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -11569,13 +10592,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 71 */
+/* 63 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -11662,13 +10685,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 72 */
+/* 64 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -11753,13 +10776,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 73 */
+/* 65 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -11867,13 +10890,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 74 */
+/* 66 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -11997,13 +11020,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 75 */
+/* 67 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -12082,13 +11105,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 76 */
+/* 68 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -12173,13 +11196,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 77 */
+/* 69 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -12313,13 +11336,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 78 */
+/* 70 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -12387,13 +11410,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 79 */
+/* 71 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -12509,13 +11532,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 80 */
+/* 72 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -12610,13 +11633,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 81 */
+/* 73 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -12726,13 +11749,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 82 */
+/* 74 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -12794,13 +11817,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 83 */
+/* 75 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -12888,13 +11911,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 84 */
+/* 76 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -12973,13 +11996,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 85 */
+/* 77 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -13081,13 +12104,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 86 */
+/* 78 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -13245,13 +12268,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 87 */
+/* 79 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -13331,13 +12354,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 88 */
+/* 80 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -13417,13 +12440,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 89 */
+/* 81 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -13481,13 +12504,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 90 */
+/* 82 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -13578,13 +12601,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 91 */
+/* 83 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -13644,13 +12667,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 92 */
+/* 84 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -13771,13 +12794,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 93 */
+/* 85 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -13862,13 +12885,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 94 */
+/* 86 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -13953,13 +12976,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 95 */
+/* 87 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -14017,13 +13040,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 96 */
+/* 88 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -14145,13 +13168,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 97 */
+/* 89 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -14275,13 +13298,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 98 */
+/* 90 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -14340,13 +13363,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 99 */
+/* 91 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -14409,13 +13432,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 100 */
+/* 92 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -14488,13 +13511,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 101 */
+/* 93 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -14674,13 +13697,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 102 */
+/* 94 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -14776,13 +13799,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 103 */
+/* 95 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -14840,13 +13863,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 104 */
+/* 96 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -14915,13 +13938,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 105 */
+/* 97 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -15075,13 +14098,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 106 */
+/* 98 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -15252,13 +14275,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 107 */
+/* 99 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -15324,13 +14347,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 108 */
+/* 100 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -15439,13 +14462,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 109 */
+/* 101 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -15554,13 +14577,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 110 */
+/* 102 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -15646,13 +14669,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 111 */
+/* 103 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -15719,13 +14742,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 112 */
+/* 104 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -15782,13 +14805,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 113 */
+/* 105 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -15915,13 +14938,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 114 */
+/* 106 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -16008,13 +15031,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 115 */
+/* 107 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -16079,13 +15102,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 116 */
+/* 108 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -16199,13 +15222,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 117 */
+/* 109 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -16270,13 +15293,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 118 */
+/* 110 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -16336,13 +15359,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 119 */
+/* 111 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -16462,12 +15485,12 @@ exports.default = function () {
 
 
 /***/ }),
-/* 120 */
+/* 112 */
 /***/ (function(module, exports, __webpack_require__) {
 
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -16560,13 +15583,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 121 */
+/* 113 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -16655,13 +15678,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 122 */
+/* 114 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -16717,13 +15740,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 123 */
+/* 115 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -16779,13 +15802,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 124 */
+/* 116 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js language configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -16902,13 +15925,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 125 */
+/* 117 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -17057,13 +16080,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 126 */
+/* 118 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -17159,13 +16182,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 127 */
+/* 119 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -17221,13 +16244,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 128 */
+/* 120 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -17283,13 +16306,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 129 */
+/* 121 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -17366,13 +16389,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 130 */
+/* 122 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -17438,13 +16461,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 131 */
+/* 123 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -17502,13 +16525,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 132 */
+/* 124 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -17616,13 +16639,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 133 */
+/* 125 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -17723,13 +16746,13 @@ exports.default = function () {
 
 
 /***/ }),
-/* 134 */
+/* 126 */
 /***/ (function(module, exports, __webpack_require__) {
 
 //! moment.js locale configuration
 
 ;(function (global, factory) {
-    true ? factory(__webpack_require__(11)) :
+    true ? factory(__webpack_require__(0)) :
    typeof define === 'function' && define.amd ? define(['../moment'], factory) :
    factory(global.moment)
 }(this, (function (moment) { 'use strict';
@@ -17830,256 +16853,1231 @@ exports.default = function () {
 
 
 /***/ }),
-/* 135 */
+/* 127 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+
+var _Tools = __webpack_require__(2);
+
+var _Tools2 = _interopRequireDefault(_Tools);
+
+var _Helper = __webpack_require__(1);
+
+var _Helper2 = _interopRequireDefault(_Helper);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// Uni operations
+var overturnOperation = function overturnOperation(collection, item, pivot, parentDest, childDest) {
+	var parent = _Tools2.default.omit(item, pivot);
+	var child = item[pivot];
+
+	if (_Tools2.default.isArray(child)) {
+		return collection.concat(child.map(function (subitem) {
+			if (_Tools2.default.isObject(subitem)) {
+				subitem[parentDest] = parent;
+			} else if (childDest) {
+				var swapSubitem = {};
+				swapSubitem[parentDest] = parent;
+				swapSubitem[childDest] = subitem;
+				subitem = swapSubitem;
+			}
+			return subitem;
+		}));
+	} else if (_Tools2.default.isObject(child)) {
+		child[parentDest] = parent;
+		collection.push(child);
+		return collection;
+	}
+	return collection;
+};
+
+var overturn = function overturn(collection, _overturn) {
+
+	if (!_overturn.pivot) {
+		console.warn('Overturn operation needs a \'pivot\' parameter.');
+		return collection;
+	}
+
+	var pivot = _overturn.pivot,
+	    dest = _overturn.dest || 'parent',
+	    child = _overturn.child || null;
+
+	return collection.reduce(function (reducedItems, item) {
+		return overturnOperation(reducedItems, item, pivot, dest, child);
+	}, []);
+};
+
+var pick = function pick(collection, _pick) {
+
+	return collection.map(function (item) {
+
+		var resultItem = {};
+
+		if (_pick.keys) {
+			_Helper2.default.iterateKeys(item, _pick.keys, function (key) {
+				if (_pick.values && _Helper2.default.evalValues(_pick.values, item[key])) {
+					resultItem[key] = item[key];
+				} else if (!_pick.values) {
+					resultItem[key] = item[key];
+				}
+			});
+		}
+
+		if (_pick.paths) {
+			_Helper2.default.iterateMap(item, _pick.paths, null, function (path, value) {
+				resultItem = _Helper2.default.set(resultItem, path, value);
+			});
+		}
+
+		return resultItem;
+	});
+};
+
+var uniq = function uniq(collection, _uniq) {
+
+	var resultCollection = [],
+	    seen = {};
+
+	if (!_uniq || !_uniq.path) {
+		console.warn('A \'path\' parameter must be provided for uniq operation.');
+		return collection;
+	}
+
+	for (var i = collection.length - 1; i >= 0; i--) {
+		if (seen[_Helper2.default.get(collection[i], _uniq.path)] !== 1) {
+			seen[_Helper2.default.get(collection[i], _uniq.path)] = 1;
+			resultCollection.push(collection[i]);
+		}
+	}
+
+	return resultCollection;
+};
+
+// Multi operations
+var filter = function filter(collection, filters, applyOperation) {
+
+	if (!filters || filters.length === 0) {
+		return collection;
+	}
+
+	return collection.filter(function (item) {
+		return filters.reduce(function (previousResult, filter) {
+			return previousResult && applyOperation('filter', filter.name, item, filter);
+		}, true);
+	});
+};
+
+var sort = function sort(collection, sorters, applyOperation) {
+
+	if (!sorters || sorters.length === 0) {
+		return collection;
+	}
+
+	return collection.sort(function (item) {
+		return sorters.reduce(function (previousResult, sorter) {
+			return previousResult && applyOperation('sorter', sorter.name, item, sorter);
+		}, true);
+	});
+};
+
+var map = function map(collection, mappers, applyOperation) {
+
+	if (!mappers || mappers.length === 0) {
+		return collection;
+	}
+
+	return collection.map(function (item) {
+		mappers.forEach(function (mapper) {
+
+			_Helper2.default.iterateKeys(item, mapper.keys, function (key) {
+				item[key] = applyOperation('mapper', mapper.name, item[key], mapper);
+			});
+		}, {});
+
+		return item;
+	});
+};
+
+var explode = function explode(collection, _explode) {
+	return collection.reduce(function (resultCollection, item) {
+		return resultCollection.concat(Object.keys(item).reduce(function (explodedItem, key) {
+
+			var resultItem = {};
+
+			if (_explode.id) {
+				if (_explode.id.includes(key)) {
+					return explodedItem;
+				}
+
+				resultItem.id = _Helper2.default.get(item, _explode.id);
+			}
+
+			resultItem[_explode.key ? _explode.key : 'key'] = key;
+			resultItem[_explode.value ? _explode.value : 'value'] = item[key];
+
+			explodedItem.push(resultItem);
+
+			return explodedItem;
+		}, []));
+	}, []);
+};
+
+var pivot = function pivot(collection, pivotCont) {
+
+	var aggregationOps = {
+		sum: function sum(previousValue, item) {
+			return previousValue + _Helper2.default.get(item, pivotCont.aggregationPath, 0);
+		},
+		count: function count(previousValue, item) {
+			return previousValue + 1;
+		}
+	};
+
+	var result = [],
+	    tmpHash = {},
+	    tmpColumnHeaders = [],
+	    columnHeader = void 0,
+	    rowSourcePath = pivotCont.rowSourcePath,
+	    rowTargetPath = pivotCont.rowTargetPath || rowSourcePath,
+	    columnPath = pivotCont.columnPath,
+	    includeRowTotal = !!pivotCont.includeRowTotal,
+	    includeColumnTotal = !!pivotCont.includeColumnTotal,
+	    totalRowName = pivotCont.totalRowName || 'Total',
+	    totalColumnName = pivotCont.totalColumnName || 'Total',
+	    aggregationOp = aggregationOps[pivotCont.aggregationOp || 'count'];
+
+	var item = void 0,
+	    processedItem = void 0,
+	    processedItemId = void 0,
+	    previousValue = void 0;
+	for (var i = 0, len = collection.length; i < len; i++) {
+		item = collection[i];
+
+		processedItemId = _Helper2.default.get(item, rowSourcePath, undefined);
+
+		if (!processedItemId) {
+			continue;
+		} else if (!tmpHash[processedItemId]) {
+			processedItem = {};
+
+			for (var j = tmpColumnHeaders.length - 1; j >= 0; j--) {
+				processedItem[tmpColumnHeaders[j]] = 0;
+			}
+
+			tmpHash[processedItemId] = processedItem;
+			result.push(processedItem);
+			_Helper2.default.set(processedItem, rowTargetPath, processedItemId);
+		} else {
+			processedItem = tmpHash[processedItemId];
+		}
+
+		columnHeader = _Helper2.default.get(item, columnPath, undefined);
+		if (columnHeader) {
+
+			if (tmpColumnHeaders.indexOf(columnHeader) === -1) {
+				tmpColumnHeaders.push(columnHeader);
+				for (var k = result.length - 1; k >= 0; k--) {
+					result[k][columnHeader] = 0;
+				}
+			}
+
+			previousValue = processedItem[columnHeader] || 0;
+			processedItem[columnHeader] = aggregationOp(previousValue, item);
+		}
+	}
+
+	if (includeRowTotal || includeColumnTotal) {
+		var i;
+		var i, length;
+		var j;
+
+		(function () {
+
+			var resultItem = void 0,
+			    columnTotalItem = {};
+
+			if (includeColumnTotal) {
+				for (i = tmpColumnHeaders.length - 1; i >= 0; i--) {
+					columnTotalItem[tmpColumnHeaders[i]] = 0;
+				}
+				_Helper2.default.set(columnTotalItem, rowTargetPath, totalColumnName);
+			}
+
+			for (i = 0, length = result.length; i < length; i++) {
+
+				resultItem = result[i];
+
+				if (includeColumnTotal) {
+					for (j = tmpColumnHeaders.length - 1; j >= 0; j--) {
+						columnHeader = tmpColumnHeaders[j];
+						columnTotalItem[columnHeader] += resultItem[columnHeader];
+					}
+				}
+
+				if (includeRowTotal) {
+					resultItem[totalRowName] = tmpColumnHeaders.reduce(function (partial, columnHeader) {
+						return partial + resultItem[columnHeader];
+					}, 0);
+				}
+			}
+
+			if (includeColumnTotal) {
+				if (includeRowTotal) {
+					columnTotalItem[totalRowName] = tmpColumnHeaders.reduce(function (partial, columnHeader) {
+						return partial + columnTotalItem[columnHeader];
+					}, 0);
+				}
+				result.push(columnTotalItem);
+			}
+		})();
+	}
+
+	return result;
+};
+
+var implode = function implode(collection, _implode) {
+	return collection.reduce(function (resultCollection, item) {
+		return resultCollection.concat(Object.keys(item).reduce(function (implodedItem, key) {
+
+			var resultItem = {};
+
+			if (_implode.id) {
+				if (_implode.id.includes(key)) {
+					return implodedItem;
+				}
+
+				resultItem.id = _Helper2.default.get(item, _implode.id);
+			}
+
+			resultItem[_implode.key ? _implode.key : 'key'] = key;
+			resultItem[_implode.value ? _implode.value : 'value'] = item[key];
+
+			implodedItem.push(resultItem);
+
+			return implodedItem;
+		}, []));
+	}, []);
+};
+
+var select = function select(collection, selectors, applyOperation) {
+
+	if (!selectors || selectors.length === 0) {
+		return collection;
+	}
+
+	return collection.map(function (item) {
+		return selectors.reduce(function (resultItem, selector) {
+			resultItem[selector.dest] = applyOperation('selector', selector.name, item, selector);
+			return resultItem;
+		}, {});
+	});
+};
+
+var reduce = function reduce(collection, reducers, applyOperation) {
+
+	if (!reducers || reducers.length === 0) {
+		return collection;
+	}
+
+	return reducers.reduce(function (resultItem, reducer) {
+
+		var start = reducer.start || 0;
+
+		if (reducer.group && reducer.path) {
+
+			var auxResult = resultItem;
+
+			if (reducer.dest) {
+				resultItem[reducer.dest] = {};
+				auxResult = resultItem[reducer.dest];
+			}
+
+			collection.forEach(function (item, index) {
+				var groupKey = _Helper2.default.get(item, reducer.group);
+
+				auxResult[groupKey] = applyOperation('reducer', reducer.name, reducer, auxResult[groupKey] || start, _Helper2.default.get(item, reducer.path), index, collection.length);
+			});
+		} else if (reducer.path && reducer.dest) {
+			resultItem[reducer.dest] = collection.reduce(function (memo, item, index) {
+
+				return applyOperation('reducer', reducer.name, reducer, memo, _Helper2.default.get(item, reducer.path), index, collection.length);
+			}, start);
+		} else if (reducer.keys) {
+
+			collection.forEach(function (item, index) {
+				_Helper2.default.iterateKeys(item, reducer.keys, function (key) {
+
+					resultItem[key] = applyOperation('reducer', reducer.name, reducer, resultItem[key] || start, item[key], index, collection.length);
+				});
+			});
+		}
+
+		return resultItem;
+	}, {});
+};
+
+// Cheff API
+exports.default = {
+	overturn: overturn,
+	filter: filter,
+	pick: pick,
+	sort: sort,
+	map: map,
+	explode: explode,
+	select: select,
+	uniq: uniq,
+	reduce: reduce,
+	pivot: pivot
+};
+
+/***/ }),
+/* 128 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+var _Tools = __webpack_require__(2);
+
+var _Tools2 = _interopRequireDefault(_Tools);
+
+var _Helper = __webpack_require__(1);
+
+var _Helper2 = _interopRequireDefault(_Helper);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var applyMatch = function applyMatch(value, match, filterFunction) {
+	if (_Tools2.default.isArray(match)) {
+		return match.reduce(function (memo, matchItem) {
+			return memo || filterFunction(value, matchItem);
+		}, false);
+	} else {
+		return filterFunction(value, match);
+	}
+};
+
+exports.default = {
+
+	match: function match(item, filter) {
+		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
+			return value === match;
+		});
+	},
+
+	mismatch: function mismatch(item, filter) {
+		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
+			return value !== match;
+		});
+	},
+
+	matchType: function matchType(item, filter) {
+		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
+			return (typeof value === 'undefined' ? 'undefined' : _typeof(value)) === match;
+		});
+	},
+
+	mismatchType: function mismatchType(item, filter) {
+		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
+			return (typeof value === 'undefined' ? 'undefined' : _typeof(value)) !== match;
+		});
+	},
+
+	includes: function includes(item, filter) {
+		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
+			return value.includes(match);
+		});
+	},
+
+	excludes: function excludes(item, filter) {
+		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
+			return !value.includes(match);
+		});
+	},
+
+	compare: function compare(item, filter) {
+		return _Helper2.default.compare(_Helper2.default.get(item, filter.path), filter.match, filter.operator);
+	},
+
+	start: function start(item, filter) {
+		return applyMatch(_Helper2.default.get(item, filter.path, ''), filter.match, function (value, match) {
+			return value.indexOf(match) === 0;
+		});
+	},
+
+	end: function end(item, filter) {
+		return applyMatch(_Helper2.default.get(item, filter.path, ''), filter.match, function (value, match) {
+			return value.indexOf(match, value.length - match.length) !== -1;
+		});
+	}
+
+};
+
+/***/ }),
+/* 129 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+exports.default = {
+
+	pass: function pass(value, mapper) {
+		return value;
+	},
+
+	replace: function replace(value, mapper) {
+
+		if (typeof value !== 'string') {
+			return value;
+		}
+
+		var replacer = mapper.match || '';
+
+		if (mapper.regex) {
+			replacer = new RegExp(mapper.regex, 'i');
+		}
+
+		return value.replace(replacer, mapper.replacement || '');
+	},
+
+	substring: function substring(value, mapper) {
+
+		if (typeof value !== 'string') {
+			return value;
+		}
+
+		return value.substring(mapper.start || 0, mapper.end || undefined);
+	},
+
+	translate: function translate(value, mapper) {
+		var conversions = mapper.conversions || mapper.convertions || {};
+		return typeof conversions[value] !== 'undefined' ? conversions[value] : value;
+	},
+
+	classify: function classify(value, mapper) {
+		var conversions = mapper.conversions || mapper.convertions || {};
+		var roundedValue = Math.round(value);
+		return typeof conversions[roundedValue] !== 'undefined' ? conversions[roundedValue] : value;
+	}
+
+};
+
+/***/ }),
+/* 130 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+
+var _Tools = __webpack_require__(2);
+
+var _Tools2 = _interopRequireDefault(_Tools);
+
+var _Helper = __webpack_require__(1);
+
+var _Helper2 = _interopRequireDefault(_Helper);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var matchBehavior = function matchBehavior(reducer, previousValue, value, reduceOperation) {
+	if (reducer.match) {
+		if (reducer.match === value) {
+			return reduceOperation();
+		} else {
+			return previousValue;
+		}
+	} else {
+		return reduceOperation();
+	}
+};
+
+exports.default = {
+
+	count: function count(reducer, previousValue, value) {
+		return matchBehavior(reducer, previousValue, value, function () {
+			return value ? previousValue + 1 : previousValue;
+		});
+	},
+
+	operation: function operation(reducer, previousValue, value) {
+		return matchBehavior(reducer, previousValue, value, function () {
+			return _Helper2.default.calculate([value, previousValue], reducer.operator);
+		});
+	},
+
+	average: function average(reducer, previousValue, value, index, size) {
+		return matchBehavior(reducer, previousValue, value, function () {
+			var result = _Helper2.default.calculate([value, previousValue], 'addition');
+
+			if (index < size - 1) {
+				return result;
+			} else {
+				return result / size;
+			}
+		});
+	},
+
+	sum: function sum(reducer, previousValue, value) {
+		return matchBehavior(reducer, previousValue, value, function () {
+			return _Helper2.default.calculate([value, previousValue], 'addition');
+		});
+	},
+
+	sumAndOperation: function sumAndOperation(reducer, previousValue, value) {
+		var sum = _Helper2.default.calculate([value, previousValue], 'addition');
+
+		return _Helper2.default.calculate([sum, reducer.operand], reducer.operator);
+	},
+
+	array: function array(reducer, previousValue, value) {
+		previousValue = _Tools2.default.isArray(previousValue) ? previousValue : [];
+		previousValue.push(value);
+		return previousValue;
+	}
+
+};
+
+/***/ }),
+/* 131 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+
+var _Helper = __webpack_require__(1);
+
+var _Helper2 = _interopRequireDefault(_Helper);
+
+var _Tools = __webpack_require__(2);
+
+var _Tools2 = _interopRequireDefault(_Tools);
+
+var _FormulaHelper = __webpack_require__(3);
+
+var _FormulaHelper2 = _interopRequireDefault(_FormulaHelper);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = {
+
+	extract: function extract(item, selector) {
+		return _Helper2.default.get(item, selector.path, selector.default);
+	},
+
+	join: function join(item, selector) {
+		return selector.paths.map(function (path) {
+			return _Helper2.default.get(item, path, selector.default);
+		}).join(selector.separator || ' ');
+	},
+
+	split: function split(item, selector) {
+		return selector.paths.map(function (path) {
+			return _Helper2.default.get(item, path, selector.default).split(selector.separator || ' ');
+		});
+	},
+
+	format: function format(item, selector) {
+		return selector.paths.reduce(function (partialFormat, path, index) {
+			return partialFormat.replace('{' + index + '}', _Helper2.default.get(item, path, selector.default));
+		}, selector.format || '');
+	},
+
+	compare: function compare(item, selector) {
+		var comparison = _Helper2.default.compare(_Helper2.default.get(item, selector.path), selector.match, selector.operator);
+		return comparison ? selector.truth : selector.false;
+	},
+
+	operation: function operation(item, selector) {
+		if (selector.path) {
+			return _Helper2.default.calculate([_Helper2.default.get(item, selector.path), selector.operand], selector.operator);
+		} else if (selector.paths) {
+			return _Helper2.default.calculate(_Helper2.default.extractMap(item, selector.paths), selector.operator);
+		} else if (selector.keys) {
+			return _Helper2.default.calculate(_Helper2.default.extractKeyValues(item, selector.keys), selector.operator);
+		} else {
+			return 0;
+		}
+	},
+
+	average: function average(item, selector) {
+		if (selector.paths) {
+			return _Helper2.default.average(_Helper2.default.extractMap(item, selector.paths));
+		} else if (selector.keys) {
+			return _Helper2.default.average(_Helper2.default.extractKeyValues(item, selector.keys));
+		} else {
+			return 0;
+		}
+	},
+
+	existsInArray: function existsInArray(item, selector) {
+
+		var value = _Helper2.default.get(item, selector.path);
+
+		if (!_Tools2.default.isArray(value)) {
+			return value;
+		}
+
+		var matchValue = selector.matchValue || 1;
+		var mismatchValue = selector.mismatchValue || 0;
+
+		return value.indexOf(selector.match) !== -1 ? matchValue : mismatchValue;
+	},
+
+	formula: function formula(item, selector) {
+		return _FormulaHelper2.default.safeEval(item, selector.expr);
+	}
+
+};
+
+/***/ }),
+/* 132 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+// import coreSorters from './CoreOperations/sorters';
+
+
+var _Cheff = __webpack_require__(127);
+
+var _Cheff2 = _interopRequireDefault(_Cheff);
+
+var _Helper = __webpack_require__(1);
+
+var _Helper2 = _interopRequireDefault(_Helper);
+
+var _FormulaHelper = __webpack_require__(3);
+
+var _FormulaHelper2 = _interopRequireDefault(_FormulaHelper);
+
+var _filters = __webpack_require__(128);
+
+var _filters2 = _interopRequireDefault(_filters);
+
+var _mappers = __webpack_require__(129);
+
+var _mappers2 = _interopRequireDefault(_mappers);
+
+var _selectors = __webpack_require__(131);
+
+var _selectors2 = _interopRequireDefault(_selectors);
+
+var _reducers = __webpack_require__(130);
+
+var _reducers2 = _interopRequireDefault(_reducers);
+
+var _Tools = __webpack_require__(2);
+
+var _Tools2 = _interopRequireDefault(_Tools);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var operationsStore = {
+	filters: _filters2.default,
+	mappers: _mappers2.default,
+	selectors: _selectors2.default,
+	reducers: _reducers2.default
+};
+
+var operationsMap = {
+	overturn: function overturn(collection, step) {
+		return _Cheff2.default.overturn(collection, step.cont);
+	},
+	filters: function filters(collection, step) {
+		return _Cheff2.default.filter(collection, step.cont, applyOperation);
+	},
+	pick: function pick(collection, step) {
+		return _Cheff2.default.pick(collection, step.cont);
+	},
+	// sorters: (collection, step) => {
+	// 	return Cheff.sort(collection, step.cont, applyOperation);
+	// },
+	mappers: function mappers(collection, step) {
+		return _Cheff2.default.map(collection, step.cont, applyOperation);
+	},
+	explode: function explode(collection, step) {
+		return _Cheff2.default.explode(collection, step.cont);
+	},
+	selectors: function selectors(collection, step) {
+		return _Cheff2.default.select(collection, step.cont, applyOperation);
+	},
+	uniq: function uniq(collection, step) {
+		return _Cheff2.default.uniq(collection, step.cont);
+	},
+	reducers: function reducers(collection, step) {
+		return [_Cheff2.default.reduce(collection, step.cont, applyOperation)];
+	},
+	pivot: function pivot(collection, step) {
+		return _Cheff2.default.pivot(collection, step.cont, applyOperation);
+	},
+	nest: function nest(collection, step) {
+		var _this = this;
+
+		var sourcePath = step.path,
+		    resultPath = step.dest || sourcePath;
+		return collection.map(function (element) {
+			return _Helper2.default.set(element, resultPath, sushiCook.call(_this, _Helper2.default.get(element, sourcePath, []), step.cont));
+		});
+	}
+};
+
+var operationsList = ['overturn', 'filters', 'pick', 'sorters', 'mappers', 'explode', 'selectors', 'uniq', 'reducers', 'pivot'];
+
+var convertFromLegacy = function convertFromLegacy(recipe, verbose) {
+	var testStep = recipe[0];
+	if (testStep && operationsList.reduce(function (memo, operationName) {
+		return memo || !!testStep[operationName];
+	}, false)) {
+
+		var newRecipe = [];
+
+		recipe.forEach(function (step) {
+			Object.keys(step).forEach(function (key) {
+				newRecipe.push({
+					op: key,
+					cont: step[key]
+				});
+			});
+		});
+
+		if (verbose) {
+			console.warn('Legacy recipe found.');
+			console.log('New recipe :');
+			console.log(JSON.stringify(newRecipe, null, 3));
+		}
+
+		return newRecipe;
+	} else {
+		return recipe;
+	}
+};
+
+var parseExpressions = function parseExpressions(recipe) {
+	recipe.forEach(function (step) {
+		if (step.op === 'selectors') {
+			step.cont.forEach(function (selector) {
+				if (selector.expr) {
+					selector.expr = _FormulaHelper2.default.parseExpression(selector.expr);
+				}
+			});
+		}
+	});
+};
+
+var applyStep = function applyStep(collection, step, options) {
+	step = step || {};
+
+	if (operationsMap[step.op]) {
+		collection = operationsMap[step.op].call(this, collection, step, options);
+	} else {
+		console.warn('Not found: ' + step.op + '.');
+	}
+
+	return collection;
+};
+
+var applyOperation = function applyOperation(type, name) {
+	for (var _len = arguments.length, rest = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+		rest[_key - 2] = arguments[_key];
+	}
+
+	if (operationsStore[type + 's'][name]) {
+		return operationsStore[type + 's'][name].apply(undefined, rest);
+	}
+
+	return notFound(type, name);
+};
+
+var notFound = function notFound(type, name) {
+	console.warn(type + ' ' + name + ' was not found in the available processes.');
+	return false;
+};
+
+var invalidOperation = function invalidOperation(type, name) {
+	console.warn(type + ' is not a valid process type.');
+	return false;
+};
+
+function sushiCook(collection, recipe, parameters) {
+	var _this2 = this;
+
+	if (_Tools2.default.isObject(recipe)) {
+		recipe = [recipe];
+	} else if (!_Tools2.default.isArray(recipe)) {
+		recipe = [];
+	}
+
+	recipe = convertFromLegacy(recipe, this.options.verbose);
+	parseExpressions(recipe);
+
+	if (parameters) {
+		recipe = this.applyParameters(recipe, parameters);
+	}
+
+	recipe.forEach(function (step) {
+		collection = applyStep.call(_this2, collection, step);
+	});
+
+	return collection;
+}
+
+// Cannot use 'export default' for compatibility issues
+module.exports = function () {
+	function Sushi() {
+		var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+		_classCallCheck(this, Sushi);
+
+		this.options = options;
+	}
+
+	_createClass(Sushi, [{
+		key: 'addOperationsBundle',
+		value: function addOperationsBundle(processesBundle) {
+			this.addOperations('filter', processesBundle.filters);
+			this.addOperations('picker', processesBundle.pickers);
+			this.addOperations('mapper', processesBundle.mappers);
+			this.addOperations('reducer', processesBundle.reducers);
+		}
+	}, {
+		key: 'addOperations',
+		value: function addOperations(type, processes) {
+			for (var name in processes) {
+				this.addOperation(type, name, processes[name]);
+			}
+		}
+	}, {
+		key: 'addOperation',
+		value: function addOperation(type, name, method) {
+
+			if (!type) {
+				return invalidOperation();
+			}
+
+			operationsStore[type + 's'][name] = method;
+		}
+	}, {
+		key: 'addFilter',
+		value: function addFilter(name, method) {
+			this.addOperation('filter', name, method);
+		}
+	}, {
+		key: 'addMapper',
+		value: function addMapper(name, method) {
+			this.addOperation('mapper', name, method);
+		}
+	}, {
+		key: 'addReducer',
+		value: function addReducer(name, method) {
+			this.addOperation('reducer', name, method);
+		}
+	}, {
+		key: 'applyParameters',
+		value: function applyParameters(recipe, parameters) {
+
+			var serializedRecipe = JSON.stringify(recipe);
+
+			for (var parameterName in parameters) {
+				serializedRecipe = serializedRecipe.replace(new RegExp('#' + parameterName + '#', 'g'), parameters[parameterName]);
+			}
+
+			return JSON.parse(serializedRecipe);
+		}
+	}, {
+		key: 'cook',
+		value: function cook(collection, recipe, parameters) {
+			return sushiCook.call(this, collection, recipe, parameters);
+		}
+	}, {
+		key: 'helper',
+		value: function helper() {
+			return _Helper2.default;
+		}
+	}]);
+
+	return Sushi;
+}();
+
+/***/ }),
+/* 133 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var map = {
-	"./af": 12,
-	"./af.js": 12,
-	"./ar": 19,
-	"./ar-dz": 13,
-	"./ar-dz.js": 13,
-	"./ar-kw": 14,
-	"./ar-kw.js": 14,
-	"./ar-ly": 15,
-	"./ar-ly.js": 15,
-	"./ar-ma": 16,
-	"./ar-ma.js": 16,
-	"./ar-sa": 17,
-	"./ar-sa.js": 17,
-	"./ar-tn": 18,
-	"./ar-tn.js": 18,
-	"./ar.js": 19,
-	"./az": 20,
-	"./az.js": 20,
-	"./be": 21,
-	"./be.js": 21,
-	"./bg": 22,
-	"./bg.js": 22,
-	"./bm": 23,
-	"./bm.js": 23,
-	"./bn": 24,
-	"./bn.js": 24,
-	"./bo": 25,
-	"./bo.js": 25,
-	"./br": 26,
-	"./br.js": 26,
-	"./bs": 27,
-	"./bs.js": 27,
-	"./ca": 28,
-	"./ca.js": 28,
-	"./cs": 29,
-	"./cs.js": 29,
-	"./cv": 30,
-	"./cv.js": 30,
-	"./cy": 31,
-	"./cy.js": 31,
-	"./da": 32,
-	"./da.js": 32,
-	"./de": 35,
-	"./de-at": 33,
-	"./de-at.js": 33,
-	"./de-ch": 34,
-	"./de-ch.js": 34,
-	"./de.js": 35,
-	"./dv": 36,
-	"./dv.js": 36,
-	"./el": 37,
-	"./el.js": 37,
-	"./en-au": 38,
-	"./en-au.js": 38,
-	"./en-ca": 39,
-	"./en-ca.js": 39,
-	"./en-gb": 40,
-	"./en-gb.js": 40,
-	"./en-ie": 41,
-	"./en-ie.js": 41,
-	"./en-il": 42,
-	"./en-il.js": 42,
-	"./en-nz": 43,
-	"./en-nz.js": 43,
-	"./eo": 44,
-	"./eo.js": 44,
-	"./es": 47,
-	"./es-do": 45,
-	"./es-do.js": 45,
-	"./es-us": 46,
-	"./es-us.js": 46,
-	"./es.js": 47,
-	"./et": 48,
-	"./et.js": 48,
-	"./eu": 49,
-	"./eu.js": 49,
-	"./fa": 50,
-	"./fa.js": 50,
-	"./fi": 51,
-	"./fi.js": 51,
-	"./fo": 52,
-	"./fo.js": 52,
-	"./fr": 55,
-	"./fr-ca": 53,
-	"./fr-ca.js": 53,
-	"./fr-ch": 54,
-	"./fr-ch.js": 54,
-	"./fr.js": 55,
-	"./fy": 56,
-	"./fy.js": 56,
-	"./gd": 57,
-	"./gd.js": 57,
-	"./gl": 58,
-	"./gl.js": 58,
-	"./gom-latn": 59,
-	"./gom-latn.js": 59,
-	"./gu": 60,
-	"./gu.js": 60,
-	"./he": 61,
-	"./he.js": 61,
-	"./hi": 62,
-	"./hi.js": 62,
-	"./hr": 63,
-	"./hr.js": 63,
-	"./hu": 64,
-	"./hu.js": 64,
-	"./hy-am": 65,
-	"./hy-am.js": 65,
-	"./id": 66,
-	"./id.js": 66,
-	"./is": 67,
-	"./is.js": 67,
-	"./it": 68,
-	"./it.js": 68,
-	"./ja": 69,
-	"./ja.js": 69,
-	"./jv": 70,
-	"./jv.js": 70,
-	"./ka": 71,
-	"./ka.js": 71,
-	"./kk": 72,
-	"./kk.js": 72,
-	"./km": 73,
-	"./km.js": 73,
-	"./kn": 74,
-	"./kn.js": 74,
-	"./ko": 75,
-	"./ko.js": 75,
-	"./ky": 76,
-	"./ky.js": 76,
-	"./lb": 77,
-	"./lb.js": 77,
-	"./lo": 78,
-	"./lo.js": 78,
-	"./lt": 79,
-	"./lt.js": 79,
-	"./lv": 80,
-	"./lv.js": 80,
-	"./me": 81,
-	"./me.js": 81,
-	"./mi": 82,
-	"./mi.js": 82,
-	"./mk": 83,
-	"./mk.js": 83,
-	"./ml": 84,
-	"./ml.js": 84,
-	"./mn": 85,
-	"./mn.js": 85,
-	"./mr": 86,
-	"./mr.js": 86,
-	"./ms": 88,
-	"./ms-my": 87,
-	"./ms-my.js": 87,
-	"./ms.js": 88,
-	"./mt": 89,
-	"./mt.js": 89,
-	"./my": 90,
-	"./my.js": 90,
-	"./nb": 91,
-	"./nb.js": 91,
-	"./ne": 92,
-	"./ne.js": 92,
-	"./nl": 94,
-	"./nl-be": 93,
-	"./nl-be.js": 93,
-	"./nl.js": 94,
-	"./nn": 95,
-	"./nn.js": 95,
-	"./pa-in": 96,
-	"./pa-in.js": 96,
-	"./pl": 97,
-	"./pl.js": 97,
-	"./pt": 99,
-	"./pt-br": 98,
-	"./pt-br.js": 98,
-	"./pt.js": 99,
-	"./ro": 100,
-	"./ro.js": 100,
-	"./ru": 101,
-	"./ru.js": 101,
-	"./sd": 102,
-	"./sd.js": 102,
-	"./se": 103,
-	"./se.js": 103,
-	"./si": 104,
-	"./si.js": 104,
-	"./sk": 105,
-	"./sk.js": 105,
-	"./sl": 106,
-	"./sl.js": 106,
-	"./sq": 107,
-	"./sq.js": 107,
-	"./sr": 109,
-	"./sr-cyrl": 108,
-	"./sr-cyrl.js": 108,
-	"./sr.js": 109,
-	"./ss": 110,
-	"./ss.js": 110,
-	"./sv": 111,
-	"./sv.js": 111,
-	"./sw": 112,
-	"./sw.js": 112,
-	"./ta": 113,
-	"./ta.js": 113,
-	"./te": 114,
-	"./te.js": 114,
-	"./tet": 115,
-	"./tet.js": 115,
-	"./tg": 116,
-	"./tg.js": 116,
-	"./th": 117,
-	"./th.js": 117,
-	"./tl-ph": 118,
-	"./tl-ph.js": 118,
-	"./tlh": 119,
-	"./tlh.js": 119,
-	"./tr": 120,
-	"./tr.js": 120,
-	"./tzl": 121,
-	"./tzl.js": 121,
-	"./tzm": 123,
-	"./tzm-latn": 122,
-	"./tzm-latn.js": 122,
-	"./tzm.js": 123,
-	"./ug-cn": 124,
-	"./ug-cn.js": 124,
-	"./uk": 125,
-	"./uk.js": 125,
-	"./ur": 126,
-	"./ur.js": 126,
-	"./uz": 128,
-	"./uz-latn": 127,
-	"./uz-latn.js": 127,
-	"./uz.js": 128,
-	"./vi": 129,
-	"./vi.js": 129,
-	"./x-pseudo": 130,
-	"./x-pseudo.js": 130,
-	"./yo": 131,
-	"./yo.js": 131,
-	"./zh-cn": 132,
-	"./zh-cn.js": 132,
-	"./zh-hk": 133,
-	"./zh-hk.js": 133,
-	"./zh-tw": 134,
-	"./zh-tw.js": 134
+	"./af": 4,
+	"./af.js": 4,
+	"./ar": 11,
+	"./ar-dz": 5,
+	"./ar-dz.js": 5,
+	"./ar-kw": 6,
+	"./ar-kw.js": 6,
+	"./ar-ly": 7,
+	"./ar-ly.js": 7,
+	"./ar-ma": 8,
+	"./ar-ma.js": 8,
+	"./ar-sa": 9,
+	"./ar-sa.js": 9,
+	"./ar-tn": 10,
+	"./ar-tn.js": 10,
+	"./ar.js": 11,
+	"./az": 12,
+	"./az.js": 12,
+	"./be": 13,
+	"./be.js": 13,
+	"./bg": 14,
+	"./bg.js": 14,
+	"./bm": 15,
+	"./bm.js": 15,
+	"./bn": 16,
+	"./bn.js": 16,
+	"./bo": 17,
+	"./bo.js": 17,
+	"./br": 18,
+	"./br.js": 18,
+	"./bs": 19,
+	"./bs.js": 19,
+	"./ca": 20,
+	"./ca.js": 20,
+	"./cs": 21,
+	"./cs.js": 21,
+	"./cv": 22,
+	"./cv.js": 22,
+	"./cy": 23,
+	"./cy.js": 23,
+	"./da": 24,
+	"./da.js": 24,
+	"./de": 27,
+	"./de-at": 25,
+	"./de-at.js": 25,
+	"./de-ch": 26,
+	"./de-ch.js": 26,
+	"./de.js": 27,
+	"./dv": 28,
+	"./dv.js": 28,
+	"./el": 29,
+	"./el.js": 29,
+	"./en-au": 30,
+	"./en-au.js": 30,
+	"./en-ca": 31,
+	"./en-ca.js": 31,
+	"./en-gb": 32,
+	"./en-gb.js": 32,
+	"./en-ie": 33,
+	"./en-ie.js": 33,
+	"./en-il": 34,
+	"./en-il.js": 34,
+	"./en-nz": 35,
+	"./en-nz.js": 35,
+	"./eo": 36,
+	"./eo.js": 36,
+	"./es": 39,
+	"./es-do": 37,
+	"./es-do.js": 37,
+	"./es-us": 38,
+	"./es-us.js": 38,
+	"./es.js": 39,
+	"./et": 40,
+	"./et.js": 40,
+	"./eu": 41,
+	"./eu.js": 41,
+	"./fa": 42,
+	"./fa.js": 42,
+	"./fi": 43,
+	"./fi.js": 43,
+	"./fo": 44,
+	"./fo.js": 44,
+	"./fr": 47,
+	"./fr-ca": 45,
+	"./fr-ca.js": 45,
+	"./fr-ch": 46,
+	"./fr-ch.js": 46,
+	"./fr.js": 47,
+	"./fy": 48,
+	"./fy.js": 48,
+	"./gd": 49,
+	"./gd.js": 49,
+	"./gl": 50,
+	"./gl.js": 50,
+	"./gom-latn": 51,
+	"./gom-latn.js": 51,
+	"./gu": 52,
+	"./gu.js": 52,
+	"./he": 53,
+	"./he.js": 53,
+	"./hi": 54,
+	"./hi.js": 54,
+	"./hr": 55,
+	"./hr.js": 55,
+	"./hu": 56,
+	"./hu.js": 56,
+	"./hy-am": 57,
+	"./hy-am.js": 57,
+	"./id": 58,
+	"./id.js": 58,
+	"./is": 59,
+	"./is.js": 59,
+	"./it": 60,
+	"./it.js": 60,
+	"./ja": 61,
+	"./ja.js": 61,
+	"./jv": 62,
+	"./jv.js": 62,
+	"./ka": 63,
+	"./ka.js": 63,
+	"./kk": 64,
+	"./kk.js": 64,
+	"./km": 65,
+	"./km.js": 65,
+	"./kn": 66,
+	"./kn.js": 66,
+	"./ko": 67,
+	"./ko.js": 67,
+	"./ky": 68,
+	"./ky.js": 68,
+	"./lb": 69,
+	"./lb.js": 69,
+	"./lo": 70,
+	"./lo.js": 70,
+	"./lt": 71,
+	"./lt.js": 71,
+	"./lv": 72,
+	"./lv.js": 72,
+	"./me": 73,
+	"./me.js": 73,
+	"./mi": 74,
+	"./mi.js": 74,
+	"./mk": 75,
+	"./mk.js": 75,
+	"./ml": 76,
+	"./ml.js": 76,
+	"./mn": 77,
+	"./mn.js": 77,
+	"./mr": 78,
+	"./mr.js": 78,
+	"./ms": 80,
+	"./ms-my": 79,
+	"./ms-my.js": 79,
+	"./ms.js": 80,
+	"./mt": 81,
+	"./mt.js": 81,
+	"./my": 82,
+	"./my.js": 82,
+	"./nb": 83,
+	"./nb.js": 83,
+	"./ne": 84,
+	"./ne.js": 84,
+	"./nl": 86,
+	"./nl-be": 85,
+	"./nl-be.js": 85,
+	"./nl.js": 86,
+	"./nn": 87,
+	"./nn.js": 87,
+	"./pa-in": 88,
+	"./pa-in.js": 88,
+	"./pl": 89,
+	"./pl.js": 89,
+	"./pt": 91,
+	"./pt-br": 90,
+	"./pt-br.js": 90,
+	"./pt.js": 91,
+	"./ro": 92,
+	"./ro.js": 92,
+	"./ru": 93,
+	"./ru.js": 93,
+	"./sd": 94,
+	"./sd.js": 94,
+	"./se": 95,
+	"./se.js": 95,
+	"./si": 96,
+	"./si.js": 96,
+	"./sk": 97,
+	"./sk.js": 97,
+	"./sl": 98,
+	"./sl.js": 98,
+	"./sq": 99,
+	"./sq.js": 99,
+	"./sr": 101,
+	"./sr-cyrl": 100,
+	"./sr-cyrl.js": 100,
+	"./sr.js": 101,
+	"./ss": 102,
+	"./ss.js": 102,
+	"./sv": 103,
+	"./sv.js": 103,
+	"./sw": 104,
+	"./sw.js": 104,
+	"./ta": 105,
+	"./ta.js": 105,
+	"./te": 106,
+	"./te.js": 106,
+	"./tet": 107,
+	"./tet.js": 107,
+	"./tg": 108,
+	"./tg.js": 108,
+	"./th": 109,
+	"./th.js": 109,
+	"./tl-ph": 110,
+	"./tl-ph.js": 110,
+	"./tlh": 111,
+	"./tlh.js": 111,
+	"./tr": 112,
+	"./tr.js": 112,
+	"./tzl": 113,
+	"./tzl.js": 113,
+	"./tzm": 115,
+	"./tzm-latn": 114,
+	"./tzm-latn.js": 114,
+	"./tzm.js": 115,
+	"./ug-cn": 116,
+	"./ug-cn.js": 116,
+	"./uk": 117,
+	"./uk.js": 117,
+	"./ur": 118,
+	"./ur.js": 118,
+	"./uz": 120,
+	"./uz-latn": 119,
+	"./uz-latn.js": 119,
+	"./uz.js": 120,
+	"./vi": 121,
+	"./vi.js": 121,
+	"./x-pseudo": 122,
+	"./x-pseudo.js": 122,
+	"./yo": 123,
+	"./yo.js": 123,
+	"./zh-cn": 124,
+	"./zh-cn.js": 124,
+	"./zh-hk": 125,
+	"./zh-hk.js": 125,
+	"./zh-tw": 126,
+	"./zh-tw.js": 126
 };
 function webpackContext(req) {
 	return __webpack_require__(webpackContextResolve(req));
@@ -18095,10 +18093,10 @@ webpackContext.keys = function webpackContextKeys() {
 };
 webpackContext.resolve = webpackContextResolve;
 module.exports = webpackContext;
-webpackContext.id = 135;
+webpackContext.id = 133;
 
 /***/ }),
-/* 136 */
+/* 134 */
 /***/ (function(module, exports) {
 
 module.exports = function(module) {
