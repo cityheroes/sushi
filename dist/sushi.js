@@ -16875,10 +16875,15 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 // Uni operations
 var overturnOperation = function overturnOperation(collection, item, pivot, parentDest, childDest) {
+	var includeEmpty = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
+
 	var parent = _Tools2.default.omit(item, pivot);
 	var child = item[pivot];
 
 	if (_Tools2.default.isArray(child)) {
+		if (includeEmpty && child.length === 0) {
+			child.push({});
+		}
 		return collection.concat(child.map(function (subitem) {
 			if (_Tools2.default.isObject(subitem)) {
 				subitem[parentDest] = parent;
@@ -16890,7 +16895,7 @@ var overturnOperation = function overturnOperation(collection, item, pivot, pare
 			}
 			return subitem;
 		}));
-	} else if (_Tools2.default.isObject(child)) {
+	} else if (_Tools2.default.isObject(child) || includeEmpty && (child = {})) {
 		child[parentDest] = parent;
 		collection.push(child);
 		return collection;
@@ -16907,10 +16912,11 @@ var overturn = function overturn(collection, _overturn) {
 
 	var pivot = _overturn.pivot,
 	    dest = _overturn.dest || 'parent',
-	    child = _overturn.child || null;
+	    child = _overturn.child || null,
+	    includeEmpty = !!_overturn.includeEmpty;
 
 	return collection.reduce(function (reducedItems, item) {
-		return overturnOperation(reducedItems, item, pivot, dest, child);
+		return overturnOperation(reducedItems, item, pivot, dest, child, includeEmpty);
 	}, []);
 };
 
