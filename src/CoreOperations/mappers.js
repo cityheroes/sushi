@@ -33,14 +33,14 @@ export default {
 	},
 
 	translate: (value, mapper) => {
-		let convertions = mapper.convertions || {};
-		return typeof convertions[value] !== 'undefined' ? convertions[value] : value;
+		let conversions = mapper.conversions || mapper.convertions || {};
+		return typeof conversions[value] !== 'undefined' ? conversions[value] : value;
 	},
 
 	classify: (value, mapper) => {
-		let convertions = mapper.convertions || {};
+		let conversions = mapper.conversions || mapper.convertions || {};
 		let roundedValue = Math.round(value);
-		return typeof convertions[roundedValue] !== 'undefined' ? convertions[roundedValue] : value;
+		return typeof conversions[roundedValue] !== 'undefined' ? conversions[roundedValue] : value;
 	}
 
 };
