@@ -1196,6 +1196,19 @@ exports.default = {
 		return value.indexOf(selector.match) !== -1 ? matchValue : mismatchValue;
 	},
 
+	pluck: function pluck(item, selector) {
+
+		var value = _Helper2.default.get(item, selector.path);
+
+		if (!_Tools2.default.isArray(value) || !selector.property) {
+			return value;
+		}
+
+		return value.map(function (subItem) {
+			return _Helper2.default.get(subItem, selector.property, selector.default || subItem);
+		});
+	},
+
 	formula: function formula(item, selector) {
 		return _FormulaHelper2.default.safeEval(item, selector.expr);
 	}

@@ -83,6 +83,19 @@ export default {
 		return value.indexOf(selector.match) !== -1 ? matchValue : mismatchValue;
 	},
 
+	pluck: (item, selector) => {
+
+		let value = Helper.get(item, selector.path);
+
+		if (!Tools.isArray(value) || !selector.property) {
+			return value;
+		}
+
+		return value.map((subItem) => {
+			return Helper.get(subItem, selector.property, (selector.default || subItem));
+		});
+	},
+
 	formula: (item, selector) => {
 		return FormulaHelper.safeEval(item, selector.expr);
 	}
