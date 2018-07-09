@@ -97,18 +97,6 @@ const convertFromLegacy = (recipe, verbose) => {
 	}
 };
 
-const parseExpressions = (recipe) => {
-	recipe.forEach((step) => {
-		if (step.op === 'selectors') {
-			step.cont.forEach((selector) => {
-				if (selector.expr) {
-					selector.expr = FormulaHelper.parseExpression(selector.expr);
-				}
-			});
-		}
-	});
-}
-
 const applyStep = function (collection, step, options) {
 	step = step || {};
 
@@ -149,7 +137,6 @@ function sushiCook (collection, recipe, parameters) {
 	}
 
 	recipe = convertFromLegacy(recipe, this.options.verbose);
-	parseExpressions(recipe);
 
 	if (parameters) {
 		recipe = this.applyParameters(recipe, parameters);

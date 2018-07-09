@@ -1,6 +1,8 @@
 import Helper from '../Helper';
 import Tools from '../Tools';
-import FormulaHelper from '../FormulaHelper';
+import FormulaValues from 'formula-values';
+
+let fvCache = {};
 
 export default {
 
@@ -96,8 +98,39 @@ export default {
 		});
 	},
 
+	count: (item, selector) => {
+
+		let value = Helper.get(item, selector.path);
+
+		if (!Tools.isArray(value)) {
+			return value;
+		}
+
+		if (selector.match) {
+			return value.filter((subItem) => {
+				return Helper.compare(
+					subItem,
+					selector.match,
+					selector.operator
+				);
+			}).length;
+		} else {
+			return value.length;
+		}
+	},
+
 	formula: (item, selector) => {
-		return FormulaHelper.safeEval(item, selector.expr);
+		if (!selector.expr) {
+			console.warn('Invalid FormulaValue expression (\'expr\').');
+			return item;
+		}
+
+		if (!fvCache[selector.expr]) {
+			fvCache[selector.expr] = new FormulaValues(selector.expr);
+		}
+
+		let fv = fvCache[selector.expr];
+		return fv.eval(item);
 	}
 
 };
