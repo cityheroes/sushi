@@ -1,6 +1,6 @@
 import Helper from '../Helper';
 import Tools from '../Tools';
-import FormulaHelper from '../FormulaHelper';
+import FormulaValues from 'formula-values';
 
 export default {
 
@@ -97,7 +97,9 @@ export default {
 	},
 
 	formula: (item, selector) => {
-		return FormulaHelper.safeEval(item, selector.expr);
+		let fv = new FormulaValues(selector.expr);
+		let res = fv.eval(item);
+		return res;
 	}
 
 };
