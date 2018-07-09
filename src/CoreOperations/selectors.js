@@ -96,6 +96,27 @@ export default {
 		});
 	},
 
+	count: (item, selector) => {
+
+		let value = Helper.get(item, selector.path);
+
+		if (!Tools.isArray(value)) {
+			return value;
+		}
+
+		if (selector.match) {
+			return value.filter((subItem) => {
+				return Helper.compare(
+					subItem,
+					selector.match,
+					selector.operator
+				);
+			}).length;
+		} else {
+			return value.length;
+		}
+	},
+
 	formula: (item, selector) => {
 		let fv = new FormulaValues(selector.expr);
 		let res = fv.eval(item);

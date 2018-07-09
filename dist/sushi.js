@@ -3228,6 +3228,23 @@ exports.default = {
 		});
 	},
 
+	count: function count(item, selector) {
+
+		var value = _Helper2.default.get(item, selector.path);
+
+		if (!_Tools2.default.isArray(value)) {
+			return value;
+		}
+
+		if (selector.match) {
+			return value.filter(function (subItem) {
+				return _Helper2.default.compare(subItem, selector.match, selector.operator);
+			}).length;
+		} else {
+			return value.length;
+		}
+	},
+
 	formula: function formula(item, selector) {
 		var fv = new _formulaValues2.default(selector.expr);
 		var res = fv.eval(item);
