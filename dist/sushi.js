@@ -3150,6 +3150,8 @@ var _formulaValues2 = _interopRequireDefault(_formulaValues);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+var fvCache = {};
+
 exports.default = {
 
 	extract: function extract(item, selector) {
@@ -3246,9 +3248,17 @@ exports.default = {
 	},
 
 	formula: function formula(item, selector) {
-		var fv = new _formulaValues2.default(selector.expr);
-		var res = fv.eval(item);
-		return res;
+		if (!selector.expr) {
+			console.warn('Invalid FormulaValue expression (\'expr\').');
+			return item;
+		}
+
+		if (!fvCache[selector.expr]) {
+			fvCache[selector.expr] = new _formulaValues2.default(selector.expr);
+		}
+
+		var fv = fvCache[selector.expr];
+		return fv.eval(item);
 	}
 
 };

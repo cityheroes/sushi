@@ -2,6 +2,8 @@ import Helper from '../Helper';
 import Tools from '../Tools';
 import FormulaValues from 'formula-values';
 
+let fvCache = {};
+
 export default {
 
 	extract: (item, selector) => {
@@ -118,9 +120,17 @@ export default {
 	},
 
 	formula: (item, selector) => {
-		let fv = new FormulaValues(selector.expr);
-		let res = fv.eval(item);
-		return res;
+		if (!selector.expr) {
+			console.warn('Invalid FormulaValue expression (\'expr\').');
+			return item;
+		}
+
+		if (!fvCache[selector.expr]) {
+			fvCache[selector.expr] = new FormulaValues(selector.expr);
+		}
+
+		let fv = fvCache[selector.expr];
+		return fv.eval(item);
 	}
 
 };
