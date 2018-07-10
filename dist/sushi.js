@@ -272,7 +272,7 @@ var compare = function compare(lvalue, rvalue, operator) {
 
 var calculate = function calculate(operands, operator) {
 
-	operator = operator || 'sum';
+	operator = operator || 'addition';
 
 	var operators = {
 		'addition': {

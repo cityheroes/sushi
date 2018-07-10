@@ -169,7 +169,7 @@ const compare = (lvalue, rvalue, operator) => {
 
 const calculate = (operands, operator) => {
 
-	operator = operator || 'sum';
+	operator = operator || 'addition';
 
 	const operators = {
 		'addition': {
