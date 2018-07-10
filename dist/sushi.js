@@ -2627,51 +2627,6 @@ var uniq = function uniq(collection, _uniq) {
 	return resultCollection;
 };
 
-// Multi operations
-var filter = function filter(collection, filters, applyOperation) {
-
-	if (!filters || filters.length === 0) {
-		return collection;
-	}
-
-	return collection.filter(function (item) {
-		return filters.reduce(function (previousResult, filter) {
-			return previousResult && applyOperation('filter', filter.name, item, filter);
-		}, true);
-	});
-};
-
-var sort = function sort(collection, sorters, applyOperation) {
-
-	if (!sorters || sorters.length === 0) {
-		return collection;
-	}
-
-	return collection.sort(function (item) {
-		return sorters.reduce(function (previousResult, sorter) {
-			return previousResult && applyOperation('sorter', sorter.name, item, sorter);
-		}, true);
-	});
-};
-
-var map = function map(collection, mappers, applyOperation) {
-
-	if (!mappers || mappers.length === 0) {
-		return collection;
-	}
-
-	return collection.map(function (item) {
-		mappers.forEach(function (mapper) {
-
-			_Helper2.default.iterateKeys(item, mapper.keys, function (key) {
-				item[key] = applyOperation('mapper', mapper.name, item[key], mapper);
-			});
-		}, {});
-
-		return item;
-	});
-};
-
 var explode = function explode(collection, _explode) {
 	return collection.reduce(function (resultCollection, item) {
 		return resultCollection.concat(Object.keys(item).reduce(function (explodedItem, key) {
@@ -2833,10 +2788,71 @@ var implode = function implode(collection, _implode) {
 	}, []);
 };
 
+// Multi operations
+var filter = function filter(collection, filters, applyOperation) {
+
+	if (!filters) {
+		return collection;
+	}
+
+	if (!Array.isArray(filters)) {
+		filters = [filters];
+	}
+
+	return collection.filter(function (item) {
+		return filters.reduce(function (previousResult, filter) {
+			return previousResult && applyOperation('filter', filter.name, item, filter);
+		}, true);
+	});
+};
+
+var sort = function sort(collection, sorters, applyOperation) {
+
+	if (!sorters) {
+		return collection;
+	}
+
+	if (!Array.isArray(sorters)) {
+		sorters = [sorters];
+	}
+
+	return collection.sort(function (item) {
+		return sorters.reduce(function (previousResult, sorter) {
+			return previousResult && applyOperation('sorter', sorter.name, item, sorter);
+		}, true);
+	});
+};
+
+var map = function map(collection, mappers, applyOperation) {
+
+	if (!mappers) {
+		return collection;
+	}
+
+	if (!Array.isArray(mappers)) {
+		mappers = [mappers];
+	}
+
+	return collection.map(function (item) {
+		mappers.forEach(function (mapper) {
+
+			_Helper2.default.iterateKeys(item, mapper.keys, function (key) {
+				item[key] = applyOperation('mapper', mapper.name, item[key], mapper);
+			});
+		}, {});
+
+		return item;
+	});
+};
+
 var select = function select(collection, selectors, applyOperation) {
 
-	if (!selectors || selectors.length === 0) {
+	if (!selectors) {
 		return collection;
+	}
+
+	if (!Array.isArray(selectors)) {
+		selectors = [selectors];
 	}
 
 	return collection.map(function (item) {
@@ -2849,8 +2865,12 @@ var select = function select(collection, selectors, applyOperation) {
 
 var reduce = function reduce(collection, reducers, applyOperation) {
 
-	if (!reducers || reducers.length === 0) {
+	if (!reducers) {
 		return collection;
+	}
+
+	if (!Array.isArray(reducers)) {
+		reducers = [reducers];
 	}
 
 	return reducers.reduce(function (resultItem, reducer) {
@@ -3039,9 +3059,24 @@ exports.default = {
 	},
 
 	classify: function classify(value, mapper) {
-		var conversions = mapper.conversions || mapper.convertions || {};
-		var roundedValue = Math.round(value);
+		var conversions = mapper.conversions || mapper.convertions || {},
+		    roundedValue = Math.round(value);
 		return typeof conversions[roundedValue] !== 'undefined' ? conversions[roundedValue] : value;
+	},
+
+	stratify: function stratify(value, mapper) {
+		var conversions = mapper.conversions || mapper.convertions || {},
+		    partialValue = mapper.default || value;
+
+		Object.keys(conversions).forEach(function (key) {
+			var bounds = key.split('-');
+
+			if (bounds.length === 2 && value >= Number(bounds[0]) && value <= Number(bounds[1])) {
+				partialValue = conversions[key];
+			}
+		});
+
+		return partialValue;
 	}
 
 };

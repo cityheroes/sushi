@@ -1,4 +1,3 @@
-
 export default {
 
 	pass: (value, mapper) => {
@@ -38,9 +37,28 @@ export default {
 	},
 
 	classify: (value, mapper) => {
-		let conversions = mapper.conversions || mapper.convertions || {};
-		let roundedValue = Math.round(value);
+		let conversions = mapper.conversions || mapper.convertions || {},
+			roundedValue = Math.round(value);
 		return typeof conversions[roundedValue] !== 'undefined' ? conversions[roundedValue] : value;
+	},
+
+	stratify: (value, mapper) => {
+		let conversions = mapper.conversions || mapper.convertions || {},
+			partialValue = mapper.default || value;
+
+		Object.keys(conversions).forEach((key) => {
+			let bounds = key.split('-');
+
+			if (
+				bounds.length === 2 &&
+				value >= Number(bounds[0]) &&
+				value <= Number(bounds[1])
+			) {
+				partialValue = conversions[key];
+			}
+		});
+
+		return partialValue;
 	}
 
 };
