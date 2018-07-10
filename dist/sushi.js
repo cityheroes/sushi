@@ -3200,9 +3200,7 @@ exports.default = {
 	},
 
 	split: function split(item, selector) {
-		return selector.paths.map(function (path) {
-			return _Helper2.default.get(item, path, selector.default).split(selector.separator || ' ');
-		});
+		return _Helper2.default.get(item, selector.path, '').split(selector.separator || ' ');
 	},
 
 	format: function format(item, selector) {

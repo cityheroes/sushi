@@ -17,9 +17,7 @@ export default {
 	},
 
 	split: (item, selector) => {
-		return selector.paths.map((path) => {
-			return Helper.get(item, path, selector.default).split(selector.separator || ' ');
-		});
+		return Helper.get(item, selector.path, '').split(selector.separator || ' ');
 	},
 
 	format: (item, selector) => {
