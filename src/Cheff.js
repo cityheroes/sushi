@@ -94,52 +94,6 @@ const uniq = (collection, uniq) => {
 	return resultCollection;
 };
 
-// Multi operations
-const filter = (collection, filters, applyOperation) => {
-
-	if (!filters || filters.length === 0) {
-		return collection;
-	}
-
-	return collection.filter((item) => {
-		return filters.reduce((previousResult, filter) => {
-			return previousResult && applyOperation('filter', filter.name, item, filter);
-		}, true);
-	});
-};
-
-const sort = (collection, sorters, applyOperation) => {
-
-	if (!sorters || sorters.length === 0) {
-		return collection;
-	}
-
-	return collection.sort((item) => {
-		return sorters.reduce((previousResult, sorter) => {
-			return previousResult && applyOperation('sorter', sorter.name, item, sorter);
-		}, true);
-	});
-};
-
-const map = (collection, mappers, applyOperation) => {
-
-	if (!mappers || mappers.length === 0) {
-		return collection;
-	}
-
-	return collection.map((item) => {
-		mappers.forEach((mapper) => {
-
-			Helper.iterateKeys(item, mapper.keys, (key) => {
-				item[key] = applyOperation('mapper', mapper.name, item[key], mapper);
-			});
-
-		}, {});
-
-		return item;
-	});
-};
-
 const explode = (collection, explode) => {
 	return collection.reduce((resultCollection, item) => {
 		return resultCollection.concat(Object.keys(item).reduce((explodedItem, key) => {
@@ -296,10 +250,72 @@ const implode = (collection, implode) => {
 	}, []);
 };
 
+// Multi operations
+const filter = (collection, filters, applyOperation) => {
+
+	if (!filters) {
+		return collection;
+	}
+
+	if (!Array.isArray(filters)) {
+		filters = [filters];
+	}
+
+	return collection.filter((item) => {
+		return filters.reduce((previousResult, filter) => {
+			return previousResult && applyOperation('filter', filter.name, item, filter);
+		}, true);
+	});
+};
+
+const sort = (collection, sorters, applyOperation) => {
+
+	if (!sorters) {
+		return collection;
+	}
+
+	if (!Array.isArray(sorters)) {
+		sorters = [sorters];
+	}
+
+	return collection.sort((item) => {
+		return sorters.reduce((previousResult, sorter) => {
+			return previousResult && applyOperation('sorter', sorter.name, item, sorter);
+		}, true);
+	});
+};
+
+const map = (collection, mappers, applyOperation) => {
+
+	if (!mappers) {
+		return collection;
+	}
+
+	if (!Array.isArray(mappers)) {
+		mappers = [mappers];
+	}
+
+	return collection.map((item) => {
+		mappers.forEach((mapper) => {
+
+			Helper.iterateKeys(item, mapper.keys, (key) => {
+				item[key] = applyOperation('mapper', mapper.name, item[key], mapper);
+			});
+
+		}, {});
+
+		return item;
+	});
+};
+
 const select = (collection, selectors, applyOperation) => {
 
-	if (!selectors || selectors.length === 0) {
+	if (!selectors) {
 		return collection;
+	}
+
+	if (!Array.isArray(selectors)) {
+		selectors = [selectors];
 	}
 
 	return collection.map((item) => {
@@ -312,8 +328,12 @@ const select = (collection, selectors, applyOperation) => {
 
 const reduce = (collection, reducers, applyOperation) => {
 
-	if (!reducers || reducers.length === 0) {
+	if (!reducers) {
 		return collection;
+	}
+
+	if (!Array.isArray(reducers)) {
+		reducers = [reducers];
 	}
 
 	return reducers.reduce((resultItem, reducer) => {
