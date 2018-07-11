@@ -3023,6 +3023,12 @@ exports.default = {
 Object.defineProperty(exports, "__esModule", {
 	value: true
 });
+var castFunctions = {
+	string: String,
+	number: Number,
+	boolean: Boolean
+};
+
 exports.default = {
 
 	pass: function pass(value, mapper) {
@@ -3077,6 +3083,11 @@ exports.default = {
 		});
 
 		return partialValue;
+	},
+
+	cast: function cast(value, mapper) {
+		var type = mapper.type || 'number';
+		return castFunctions[type](value);
 	}
 
 };

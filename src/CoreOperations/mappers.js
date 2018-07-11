@@ -1,3 +1,9 @@
+let castFunctions = {
+	string: String,
+	number: Number,
+	boolean: Boolean
+};
+
 export default {
 
 	pass: (value, mapper) => {
@@ -59,6 +65,11 @@ export default {
 		});
 
 		return partialValue;
+	},
+
+	cast: (value, mapper) => {
+		let type = mapper.type || 'number';
+		return castFunctions[type](value);
 	}
 
 };
