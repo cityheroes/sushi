@@ -342,15 +342,25 @@ const reduce = (collection, reducers, applyOperation) => {
 
 		 if (reducer.group && reducer.path) {
 
-		 	let auxResult = resultItem;
+		 	let auxResult = resultItem,
+		 		groupKey,
+		 		groupLengths = collection.reduce((memo, item) => {
+					groupKey = Helper.get(item, reducer.group);
+					memo[groupKey] = memo[groupKey] || 0;
+					memo[groupKey]++;
+		 			return memo;
+		 		}, {});
 
 		 	if (reducer.dest) {
 				resultItem[reducer.dest] = {};
 				auxResult = resultItem[reducer.dest];
 		 	}
 
-			collection.forEach((item, index) => {
-				let groupKey = Helper.get(item, reducer.group);
+		 	let groupIndexes = {};
+			collection.forEach((item) => {
+				groupKey = Helper.get(item, reducer.group);
+
+				groupIndexes[groupKey] = groupIndexes[groupKey] || 0;
 
 				auxResult[groupKey] = applyOperation(
 					'reducer',
@@ -358,10 +368,11 @@ const reduce = (collection, reducers, applyOperation) => {
 					reducer,
 					auxResult[groupKey] || start,
 					Helper.get(item, reducer.path),
-					index,
-					collection.length
+					groupIndexes[groupKey],
+					groupLengths[groupKey]
 				);
 
+				groupIndexes[groupKey]++;
 			});
 		} else if (reducer.path && reducer.dest) {
 			resultItem[reducer.dest] = collection.reduce((memo, item, index) => {

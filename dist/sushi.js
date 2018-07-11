@@ -2879,17 +2879,29 @@ var reduce = function reduce(collection, reducers, applyOperation) {
 
 		if (reducer.group && reducer.path) {
 
-			var auxResult = resultItem;
+			var auxResult = resultItem,
+			    groupKey = void 0,
+			    groupLengths = collection.reduce(function (memo, item) {
+				groupKey = _Helper2.default.get(item, reducer.group);
+				memo[groupKey] = memo[groupKey] || 0;
+				memo[groupKey]++;
+				return memo;
+			}, {});
 
 			if (reducer.dest) {
 				resultItem[reducer.dest] = {};
 				auxResult = resultItem[reducer.dest];
 			}
 
-			collection.forEach(function (item, index) {
-				var groupKey = _Helper2.default.get(item, reducer.group);
+			var groupIndexes = {};
+			collection.forEach(function (item) {
+				groupKey = _Helper2.default.get(item, reducer.group);
 
-				auxResult[groupKey] = applyOperation('reducer', reducer.name, reducer, auxResult[groupKey] || start, _Helper2.default.get(item, reducer.path), index, collection.length);
+				groupIndexes[groupKey] = groupIndexes[groupKey] || 0;
+
+				auxResult[groupKey] = applyOperation('reducer', reducer.name, reducer, auxResult[groupKey] || start, _Helper2.default.get(item, reducer.path), groupIndexes[groupKey], groupLengths[groupKey]);
+
+				groupIndexes[groupKey]++;
 			});
 		} else if (reducer.path && reducer.dest) {
 			resultItem[reducer.dest] = collection.reduce(function (memo, item, index) {
