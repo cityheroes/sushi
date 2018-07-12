@@ -117,6 +117,18 @@ export default {
 		}
 	},
 
+	merge: (item, selector) => {
+		let result = [],
+			value;
+		selector.paths.forEach((path) => {
+			value = Helper.get(item, path);
+			if (Tools.isArray(value)) {
+				result = result.concat(value);
+			}
+		});
+		return result;
+	},
+
 	formula: (item, selector) => {
 		if (!selector.expr) {
 			console.warn('Invalid FormulaValue expression (\'expr\').');

@@ -3303,6 +3303,18 @@ exports.default = {
 		}
 	},
 
+	merge: function merge(item, selector) {
+		var result = [],
+		    value = void 0;
+		selector.paths.forEach(function (path) {
+			value = _Helper2.default.get(item, path);
+			if (_Tools2.default.isArray(value)) {
+				result = result.concat(value);
+			}
+		});
+		return result;
+	},
+
 	formula: function formula(item, selector) {
 		if (!selector.expr) {
 			console.warn('Invalid FormulaValue expression (\'expr\').');
