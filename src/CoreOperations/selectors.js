@@ -129,6 +129,36 @@ export default {
 		return result;
 	},
 
+	objKeys: (item, selector) => {
+		let value = Helper.get(item, selector.path);
+
+		if (!Tools.isObject) {
+			return value;
+		}
+
+		return Object.keys(value);
+	},
+
+	objValues: (item, selector) => {
+		let value = Helper.get(item, selector.path);
+
+		if (!Tools.isObject) {
+			return value;
+		}
+
+		return Object.values(value);
+	},
+
+	objEntries: (item, selector) => {
+		let value = Helper.get(item, selector.path);
+
+		if (!Tools.isObject) {
+			return value;
+		}
+
+		return Object.entries(value);
+	},
+
 	formula: (item, selector) => {
 		if (!selector.expr) {
 			console.warn('Invalid FormulaValue expression (\'expr\').');
