@@ -99,6 +99,10 @@ var parsePath = function parsePath(pathParam) {
 
 var get = function get(obj, path, defaultValue) {
 
+	if (path === '') {
+		return obj;
+	}
+
 	var arr = path.split('.');
 
 	while (arr.length && obj) {

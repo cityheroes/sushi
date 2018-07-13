@@ -6,6 +6,10 @@ const parsePath = (pathParam) => {
 
 const get = (obj, path, defaultValue) => {
 
+	if (path === '') {
+		return obj;
+	}
+
 	var arr = path.split('.');
 
 	while (arr.length && obj) {
