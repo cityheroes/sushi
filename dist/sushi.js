@@ -99,6 +99,10 @@ var parsePath = function parsePath(pathParam) {
 
 var get = function get(obj, path, defaultValue) {
 
+	if (path === '') {
+		return obj;
+	}
+
 	var arr = path.split('.');
 
 	while (arr.length && obj) {
@@ -3313,6 +3317,36 @@ exports.default = {
 			}
 		});
 		return result;
+	},
+
+	objKeys: function objKeys(item, selector) {
+		var value = _Helper2.default.get(item, selector.path);
+
+		if (!_Tools2.default.isObject) {
+			return value;
+		}
+
+		return Object.keys(value);
+	},
+
+	objValues: function objValues(item, selector) {
+		var value = _Helper2.default.get(item, selector.path);
+
+		if (!_Tools2.default.isObject) {
+			return value;
+		}
+
+		return Object.values(value);
+	},
+
+	objEntries: function objEntries(item, selector) {
+		var value = _Helper2.default.get(item, selector.path);
+
+		if (!_Tools2.default.isObject) {
+			return value;
+		}
+
+		return Object.entries(value);
 	},
 
 	formula: function formula(item, selector) {
