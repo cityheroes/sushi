@@ -31,7 +31,7 @@ const get = (obj, path, defaultValue) => {
 		}
 	}
 
-	return obj || defaultValue;
+	return ('undefined' === typeof obj) ? defaultValue : obj;
 };
 
 /**
