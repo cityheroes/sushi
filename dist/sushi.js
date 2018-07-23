@@ -3319,6 +3319,28 @@ exports.default = {
 		return result;
 	},
 
+	itemAt: function itemAt(item, selector) {
+
+		var value = _Helper2.default.get(item, selector.path);
+
+		if (!_Tools2.default.isArray(value)) {
+			return selector.default;
+		}
+
+		var index = 'undefined' !== typeof selector.index ? selector.index : 0,
+		    size = value.length;
+
+		if (size === 0) {
+			return selector.default;
+		}
+
+		while (index < 0) {
+			index = size + index;
+		}
+
+		return 'undefined' !== typeof value[index] ? value[index] : selector.default;
+	},
+
 	objKeys: function objKeys(item, selector) {
 		var value = _Helper2.default.get(item, selector.path);
 

@@ -129,6 +129,28 @@ export default {
 		return result;
 	},
 
+	itemAt: (item, selector) => {
+
+		let value = Helper.get(item, selector.path);
+
+		if (!Tools.isArray(value)) {
+			return selector.default;
+		}
+
+		let index = 'undefined' !== typeof selector.index ? selector.index : 0,
+			size = value.length;
+
+		if (size === 0) {
+			return selector.default;
+		}
+
+		while (index < 0) {
+			index = size + index;
+		}
+
+		return 'undefined' !== typeof value[index] ? value[index] : selector.default;
+	},
+
 	objKeys: (item, selector) => {
 		let value = Helper.get(item, selector.path);
 
