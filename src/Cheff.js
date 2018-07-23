@@ -75,11 +75,10 @@ const pick = (collection, pick) => {
 const uniq = (collection, uniq) => {
 
 	let resultCollection = [],
-			seen = {}
-	;
+			seen = {};
 
 	if (!uniq || !uniq.path) {
-		console.warn('A \'path\' parameter must be provided for uniq operation.');
+		console.warn('A \'path\' parameter must be provided for the uniq operation.');
 		return collection;
 	}
 
@@ -251,25 +250,32 @@ const implode = (collection, implode) => {
 	}, []);
 };
 
-const classify = (collection, join) => {
-	let tempMap = {},
-		dest = join.dest || 'dest',
+const classify = (collection, classify) => {
+
+ 	if (!classify || !classify.classifier) {
+		console.warn('A \'classifier\' parameter must be provided for the classify operation.');
+		return collection;
+	}
+
+	let classifier = classify.classifier,
+		classifierValue,
+		dest = classify.dest || 'dest',
+		tempMap = {},
 		size = collection.length - 1,
-		item,
-		id;
+		item;
 
 	for (var i = size; i >= 0; i--) {
 		item = collection[i];
-		id = Helper.get(item, join.id);
-		tempMap[id] = tempMap[id] || {};
-		tempMap[id][dest] = tempMap[id][dest] || [];
-		tempMap[id][dest].push(item);
+		classifierValue = Helper.get(item, classifier);
+		tempMap[classifierValue] = tempMap[classifierValue] || {};
+		tempMap[classifierValue][dest] = tempMap[classifierValue][dest] || [];
+		tempMap[classifierValue][dest].push(item);
 	}
 
 	return Object.keys(tempMap).map((key) => {
-		item[join.id] = key;
+		item[classifier] = key;
 		return {
-			[join.id]: key,
+			[classifier]: key,
 			...tempMap[key]
 		};
 	});

@@ -2621,7 +2621,7 @@ var uniq = function uniq(collection, _uniq) {
 	    seen = {};
 
 	if (!_uniq || !_uniq.path) {
-		console.warn('A \'path\' parameter must be provided for uniq operation.');
+		console.warn('A \'path\' parameter must be provided for the uniq operation.');
 		return collection;
 	}
 
@@ -2797,24 +2797,31 @@ var implode = function implode(collection, _implode) {
 	}, []);
 };
 
-var classify = function classify(collection, join) {
-	var tempMap = {},
-	    dest = join.dest || 'dest',
+var classify = function classify(collection, _classify) {
+
+	if (!_classify || !_classify.classifier) {
+		console.warn('A \'classifier\' parameter must be provided for the classify operation.');
+		return collection;
+	}
+
+	var classifier = _classify.classifier,
+	    classifierValue = void 0,
+	    dest = _classify.dest || 'dest',
+	    tempMap = {},
 	    size = collection.length - 1,
-	    item = void 0,
-	    id = void 0;
+	    item = void 0;
 
 	for (var i = size; i >= 0; i--) {
 		item = collection[i];
-		id = _Helper2.default.get(item, join.id);
-		tempMap[id] = tempMap[id] || {};
-		tempMap[id][dest] = tempMap[id][dest] || [];
-		tempMap[id][dest].push(item);
+		classifierValue = _Helper2.default.get(item, classifier);
+		tempMap[classifierValue] = tempMap[classifierValue] || {};
+		tempMap[classifierValue][dest] = tempMap[classifierValue][dest] || [];
+		tempMap[classifierValue][dest].push(item);
 	}
 
 	return Object.keys(tempMap).map(function (key) {
-		item[join.id] = key;
-		return _extends(_defineProperty({}, join.id, key), tempMap[key]);
+		item[classifier] = key;
+		return _extends(_defineProperty({}, classifier, key), tempMap[key]);
 	});
 };
 
