@@ -227,10 +227,11 @@ const pivot = (collection, pivotCont) => {
 };
 
 const implode = (collection, implode) => {
+	let resultItem;
 	return collection.reduce((resultCollection, item) => {
 		return resultCollection.concat(Object.keys(item).reduce((implodedItem, key) => {
 
-			let resultItem = {};
+			resultItem = {};
 
 			if (implode.id) {
 				if (implode.id.includes(key)) {
@@ -248,6 +249,30 @@ const implode = (collection, implode) => {
 			return implodedItem;
 		}, []));
 	}, []);
+};
+
+const classify = (collection, join) => {
+	let tempMap = {},
+		dest = join.dest || 'dest',
+		size = collection.length - 1,
+		item,
+		id;
+
+	for (var i = size; i >= 0; i--) {
+		item = collection[i];
+		id = Helper.get(item, join.id);
+		tempMap[id] = tempMap[id] || {};
+		tempMap[id][dest] = tempMap[id][dest] || [];
+		tempMap[id][dest].push(item);
+	}
+
+	return Object.keys(tempMap).map((key) => {
+		item[join.id] = key;
+		return {
+			[join.id]: key,
+			...tempMap[key]
+		};
+	});
 };
 
 // Multi operations
@@ -422,5 +447,6 @@ export default {
 	select: select,
 	uniq: uniq,
 	reduce: reduce,
-	pivot: pivot
+	pivot: pivot,
+	classify: classify
 };

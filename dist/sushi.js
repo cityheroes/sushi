@@ -2528,6 +2528,8 @@ Object.defineProperty(exports, "__esModule", {
 	value: true
 });
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 var _Tools = __webpack_require__(1);
 
 var _Tools2 = _interopRequireDefault(_Tools);
@@ -2537,6 +2539,8 @@ var _Helper = __webpack_require__(0);
 var _Helper2 = _interopRequireDefault(_Helper);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 // Uni operations
 var overturnOperation = function overturnOperation(collection, item, pivot, parentDest, childDest) {
@@ -2769,10 +2773,11 @@ var pivot = function pivot(collection, pivotCont) {
 };
 
 var implode = function implode(collection, _implode) {
+	var resultItem = void 0;
 	return collection.reduce(function (resultCollection, item) {
 		return resultCollection.concat(Object.keys(item).reduce(function (implodedItem, key) {
 
-			var resultItem = {};
+			resultItem = {};
 
 			if (_implode.id) {
 				if (_implode.id.includes(key)) {
@@ -2790,6 +2795,27 @@ var implode = function implode(collection, _implode) {
 			return implodedItem;
 		}, []));
 	}, []);
+};
+
+var classify = function classify(collection, join) {
+	var tempMap = {},
+	    dest = join.dest || 'dest',
+	    size = collection.length - 1,
+	    item = void 0,
+	    id = void 0;
+
+	for (var i = size; i >= 0; i--) {
+		item = collection[i];
+		id = _Helper2.default.get(item, join.id);
+		tempMap[id] = tempMap[id] || {};
+		tempMap[id][dest] = tempMap[id][dest] || [];
+		tempMap[id][dest].push(item);
+	}
+
+	return Object.keys(tempMap).map(function (key) {
+		item[join.id] = key;
+		return _extends(_defineProperty({}, join.id, key), tempMap[key]);
+	});
 };
 
 // Multi operations
@@ -2937,7 +2963,8 @@ exports.default = {
 	select: select,
 	uniq: uniq,
 	reduce: reduce,
-	pivot: pivot
+	pivot: pivot,
+	classify: classify
 };
 
 /***/ }),
@@ -3569,6 +3596,9 @@ var operationsMap = {
 		return collection.map(function (element) {
 			return _Helper2.default.set(element, resultPath, sushiCook.call(_this, _Helper2.default.get(element, sourcePath, []), step.cont));
 		});
+	},
+	classify: function classify(collection, step) {
+		return _Cheff2.default.classify(collection, step.cont, applyOperation);
 	}
 };
 
