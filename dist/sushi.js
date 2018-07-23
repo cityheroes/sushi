@@ -2807,6 +2807,7 @@ var classify = function classify(collection, _classify) {
 	var classifier = _classify.classifier,
 	    classifierValue = void 0,
 	    dest = _classify.dest || 'dest',
+	    defaultValue = _classify.default,
 	    tempMap = {},
 	    size = collection.length - 1,
 	    item = void 0;
@@ -2814,6 +2815,7 @@ var classify = function classify(collection, _classify) {
 	for (var i = size; i >= 0; i--) {
 		item = collection[i];
 		classifierValue = _Helper2.default.get(item, classifier);
+		classifierValue = 'undefined' !== typeof classifierValue ? classifierValue : defaultValue;
 		tempMap[classifierValue] = tempMap[classifierValue] || {};
 		tempMap[classifierValue][dest] = tempMap[classifierValue][dest] || [];
 		tempMap[classifierValue][dest].push(item);

@@ -260,6 +260,7 @@ const classify = (collection, classify) => {
 	let classifier = classify.classifier,
 		classifierValue,
 		dest = classify.dest || 'dest',
+		defaultValue = classify.default,
 		tempMap = {},
 		size = collection.length - 1,
 		item;
@@ -267,6 +268,7 @@ const classify = (collection, classify) => {
 	for (var i = size; i >= 0; i--) {
 		item = collection[i];
 		classifierValue = Helper.get(item, classifier);
+		classifierValue = 'undefined' !== typeof classifierValue ? classifierValue : defaultValue;
 		tempMap[classifierValue] = tempMap[classifierValue] || {};
 		tempMap[classifierValue][dest] = tempMap[classifierValue][dest] || [];
 		tempMap[classifierValue][dest].push(item);
