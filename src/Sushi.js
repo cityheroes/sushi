@@ -52,6 +52,9 @@ const operationsMap = {
 		return collection.map((element) => {
 			return Helper.set(element, resultPath, sushiCook.call(this, Helper.get(element, sourcePath, []), step.cont));
 		});
+	},
+	classify: (collection, step) => {
+		return Cheff.classify(collection, step.cont, applyOperation);
 	}
 };
 

@@ -2528,6 +2528,8 @@ Object.defineProperty(exports, "__esModule", {
 	value: true
 });
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 var _Tools = __webpack_require__(1);
 
 var _Tools2 = _interopRequireDefault(_Tools);
@@ -2537,6 +2539,8 @@ var _Helper = __webpack_require__(0);
 var _Helper2 = _interopRequireDefault(_Helper);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 // Uni operations
 var overturnOperation = function overturnOperation(collection, item, pivot, parentDest, childDest) {
@@ -2617,7 +2621,7 @@ var uniq = function uniq(collection, _uniq) {
 	    seen = {};
 
 	if (!_uniq || !_uniq.path) {
-		console.warn('A \'path\' parameter must be provided for uniq operation.');
+		console.warn('A \'path\' parameter must be provided for the uniq operation.');
 		return collection;
 	}
 
@@ -2769,10 +2773,11 @@ var pivot = function pivot(collection, pivotCont) {
 };
 
 var implode = function implode(collection, _implode) {
+	var resultItem = void 0;
 	return collection.reduce(function (resultCollection, item) {
 		return resultCollection.concat(Object.keys(item).reduce(function (implodedItem, key) {
 
-			var resultItem = {};
+			resultItem = {};
 
 			if (_implode.id) {
 				if (_implode.id.includes(key)) {
@@ -2790,6 +2795,36 @@ var implode = function implode(collection, _implode) {
 			return implodedItem;
 		}, []));
 	}, []);
+};
+
+var classify = function classify(collection, _classify) {
+
+	if (!_classify || !_classify.classifier) {
+		console.warn('A \'classifier\' parameter must be provided for the classify operation.');
+		return collection;
+	}
+
+	var classifier = _classify.classifier,
+	    classifierValue = void 0,
+	    dest = _classify.dest || 'dest',
+	    defaultValue = _classify.default,
+	    tempMap = {},
+	    size = collection.length - 1,
+	    item = void 0;
+
+	for (var i = size; i >= 0; i--) {
+		item = collection[i];
+		classifierValue = _Helper2.default.get(item, classifier);
+		classifierValue = 'undefined' !== typeof classifierValue ? classifierValue : defaultValue;
+		tempMap[classifierValue] = tempMap[classifierValue] || {};
+		tempMap[classifierValue][dest] = tempMap[classifierValue][dest] || [];
+		tempMap[classifierValue][dest].push(item);
+	}
+
+	return Object.keys(tempMap).map(function (key) {
+		item[classifier] = key;
+		return _extends(_defineProperty({}, classifier, key), tempMap[key]);
+	});
 };
 
 // Multi operations
@@ -2937,7 +2972,8 @@ exports.default = {
 	select: select,
 	uniq: uniq,
 	reduce: reduce,
-	pivot: pivot
+	pivot: pivot,
+	classify: classify
 };
 
 /***/ }),
@@ -3319,6 +3355,57 @@ exports.default = {
 		return result;
 	},
 
+	itemAt: function itemAt(item, selector) {
+
+		var value = _Helper2.default.get(item, selector.path);
+
+		if (!_Tools2.default.isArray(value)) {
+			return selector.default;
+		}
+
+		var index = 'undefined' !== typeof selector.index ? selector.index : 0,
+		    size = value.length;
+
+		if (size === 0) {
+			return selector.default;
+		}
+
+		while (index < 0) {
+			index = size + index;
+		}
+
+		return 'undefined' !== typeof value[index] ? value[index] : selector.default;
+	},
+
+	groupBy: function groupBy(item, selector) {
+
+		var value = _Helper2.default.get(item, selector.path),
+		    defaultValue = selector.default;
+
+		if (!_Tools2.default.isArray(value)) {
+			return defaultValue;
+		}
+
+		if (!selector.group) {
+			console.warn('A \'group\' parameter must be provided for the groupBy operation.');
+			return defaultValue;
+		}
+
+		var groupMap = {},
+		    groupValue = void 0,
+		    group = selector.group,
+		    size = value.length - 1;
+
+		for (var i = size; i >= 0; i--) {
+			groupValue = _Helper2.default.get(value[i], group);
+			groupValue = 'undefined' !== typeof groupValue ? groupValue : defaultValue;
+			groupMap[groupValue] = groupMap[groupValue] || [];
+			groupMap[groupValue].push(item);
+		}
+
+		return groupMap;
+	},
+
 	objKeys: function objKeys(item, selector) {
 		var value = _Helper2.default.get(item, selector.path);
 
@@ -3547,6 +3634,9 @@ var operationsMap = {
 		return collection.map(function (element) {
 			return _Helper2.default.set(element, resultPath, sushiCook.call(_this, _Helper2.default.get(element, sourcePath, []), step.cont));
 		});
+	},
+	classify: function classify(collection, step) {
+		return _Cheff2.default.classify(collection, step.cont, applyOperation);
 	}
 };
 

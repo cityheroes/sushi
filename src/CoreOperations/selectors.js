@@ -129,6 +129,57 @@ export default {
 		return result;
 	},
 
+	itemAt: (item, selector) => {
+
+		let value = Helper.get(item, selector.path);
+
+		if (!Tools.isArray(value)) {
+			return selector.default;
+		}
+
+		let index = 'undefined' !== typeof selector.index ? selector.index : 0,
+			size = value.length;
+
+		if (size === 0) {
+			return selector.default;
+		}
+
+		while (index < 0) {
+			index = size + index;
+		}
+
+		return 'undefined' !== typeof value[index] ? value[index] : selector.default;
+	},
+
+	groupBy: (item, selector) => {
+
+		let value = Helper.get(item, selector.path),
+			defaultValue = selector.default;
+
+		if (!Tools.isArray(value)) {
+			return defaultValue;
+		}
+
+		if (!selector.group) {
+			console.warn('A \'group\' parameter must be provided for the groupBy operation.');
+			return defaultValue;
+		}
+
+		let groupMap = {},
+			groupValue,
+			group = selector.group,
+			size = value.length - 1;
+
+		for (var i = size; i >= 0; i--) {
+			groupValue = Helper.get(value[i], group);
+			groupValue = 'undefined' !== typeof groupValue ? groupValue : defaultValue;
+			groupMap[groupValue] = groupMap[groupValue] || [];
+			groupMap[groupValue].push(item);
+		}
+
+		return groupMap;
+	},
+
 	objKeys: (item, selector) => {
 		let value = Helper.get(item, selector.path);
 

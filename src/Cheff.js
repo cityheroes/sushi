@@ -75,11 +75,10 @@ const pick = (collection, pick) => {
 const uniq = (collection, uniq) => {
 
 	let resultCollection = [],
-			seen = {}
-	;
+			seen = {};
 
 	if (!uniq || !uniq.path) {
-		console.warn('A \'path\' parameter must be provided for uniq operation.');
+		console.warn('A \'path\' parameter must be provided for the uniq operation.');
 		return collection;
 	}
 
@@ -227,10 +226,11 @@ const pivot = (collection, pivotCont) => {
 };
 
 const implode = (collection, implode) => {
+	let resultItem;
 	return collection.reduce((resultCollection, item) => {
 		return resultCollection.concat(Object.keys(item).reduce((implodedItem, key) => {
 
-			let resultItem = {};
+			resultItem = {};
 
 			if (implode.id) {
 				if (implode.id.includes(key)) {
@@ -248,6 +248,39 @@ const implode = (collection, implode) => {
 			return implodedItem;
 		}, []));
 	}, []);
+};
+
+const classify = (collection, classify) => {
+
+ 	if (!classify || !classify.classifier) {
+		console.warn('A \'classifier\' parameter must be provided for the classify operation.');
+		return collection;
+	}
+
+	let classifier = classify.classifier,
+		classifierValue,
+		dest = classify.dest || 'dest',
+		defaultValue = classify.default,
+		tempMap = {},
+		size = collection.length - 1,
+		item;
+
+	for (var i = size; i >= 0; i--) {
+		item = collection[i];
+		classifierValue = Helper.get(item, classifier);
+		classifierValue = 'undefined' !== typeof classifierValue ? classifierValue : defaultValue;
+		tempMap[classifierValue] = tempMap[classifierValue] || {};
+		tempMap[classifierValue][dest] = tempMap[classifierValue][dest] || [];
+		tempMap[classifierValue][dest].push(item);
+	}
+
+	return Object.keys(tempMap).map((key) => {
+		item[classifier] = key;
+		return {
+			[classifier]: key,
+			...tempMap[key]
+		};
+	});
 };
 
 // Multi operations
@@ -422,5 +455,6 @@ export default {
 	select: select,
 	uniq: uniq,
 	reduce: reduce,
-	pivot: pivot
+	pivot: pivot,
+	classify: classify
 };

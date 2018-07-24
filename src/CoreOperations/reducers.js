@@ -90,6 +90,6 @@ export default {
 		previousValue = tools.isArray(previousValue) ? previousValue : [];
 		previousValue.push(value);
 		return previousValue;
-	},
+	}
 
 };
