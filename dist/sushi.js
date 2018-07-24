@@ -3377,6 +3377,35 @@ exports.default = {
 		return 'undefined' !== typeof value[index] ? value[index] : selector.default;
 	},
 
+	groupBy: function groupBy(item, selector) {
+
+		var value = _Helper2.default.get(item, selector.path);
+
+		if (!_Tools2.default.isArray(value)) {
+			return selector.default;
+		}
+
+		if (!selector.group) {
+			console.warn('A \'group\' parameter must be provided for the groupBy operation.');
+			return selector.default;
+		}
+
+		var groupMap = {},
+		    groupValue = void 0,
+		    defaultValue = selector.default,
+		    group = selector.group,
+		    size = value.length - 1;
+
+		for (var i = size; i >= 0; i--) {
+			groupValue = _Helper2.default.get(value[i], group);
+			groupValue = 'undefined' !== typeof groupValue ? groupValue : defaultValue;
+			groupMap[groupValue] = groupMap[groupValue] || [];
+			groupMap[groupValue].push(item);
+		}
+
+		return groupMap;
+	},
+
 	objKeys: function objKeys(item, selector) {
 		var value = _Helper2.default.get(item, selector.path);
 

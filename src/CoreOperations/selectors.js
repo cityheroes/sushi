@@ -151,6 +151,35 @@ export default {
 		return 'undefined' !== typeof value[index] ? value[index] : selector.default;
 	},
 
+	groupBy: (item, selector) => {
+
+		let value = Helper.get(item, selector.path);
+
+		if (!Tools.isArray(value)) {
+			return selector.default;
+		}
+
+		if (!selector.group) {
+			console.warn('A \'group\' parameter must be provided for the groupBy operation.');
+			return selector.default;
+		}
+
+		let groupMap = {},
+			groupValue,
+			defaultValue = selector.default,
+			group = selector.group,
+			size = value.length - 1;
+
+		for (var i = size; i >= 0; i--) {
+			groupValue = Helper.get(value[i], group);
+			groupValue = 'undefined' !== typeof groupValue ? groupValue : defaultValue;
+			groupMap[groupValue] = groupMap[groupValue] || [];
+			groupMap[groupValue].push(item);
+		}
+
+		return groupMap;
+	},
+
 	objKeys: (item, selector) => {
 		let value = Helper.get(item, selector.path);
 
