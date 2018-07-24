@@ -3379,20 +3379,20 @@ exports.default = {
 
 	groupBy: function groupBy(item, selector) {
 
-		var value = _Helper2.default.get(item, selector.path);
+		var value = _Helper2.default.get(item, selector.path),
+		    defaultValue = selector.default;
 
 		if (!_Tools2.default.isArray(value)) {
-			return selector.default;
+			return defaultValue;
 		}
 
 		if (!selector.group) {
 			console.warn('A \'group\' parameter must be provided for the groupBy operation.');
-			return selector.default;
+			return defaultValue;
 		}
 
 		var groupMap = {},
 		    groupValue = void 0,
-		    defaultValue = selector.default,
 		    group = selector.group,
 		    size = value.length - 1;
 

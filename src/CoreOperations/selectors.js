@@ -153,20 +153,20 @@ export default {
 
 	groupBy: (item, selector) => {
 
-		let value = Helper.get(item, selector.path);
+		let value = Helper.get(item, selector.path),
+			defaultValue = selector.default;
 
 		if (!Tools.isArray(value)) {
-			return selector.default;
+			return defaultValue;
 		}
 
 		if (!selector.group) {
 			console.warn('A \'group\' parameter must be provided for the groupBy operation.');
-			return selector.default;
+			return defaultValue;
 		}
 
 		let groupMap = {},
 			groupValue,
-			defaultValue = selector.default,
 			group = selector.group,
 			size = value.length - 1;
 
