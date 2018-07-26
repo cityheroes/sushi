@@ -129,6 +129,27 @@ export default {
 		return result;
 	},
 
+	zip: (item, selector) => {
+		let result = [],
+			value,
+			i,
+			size;
+
+		selector.paths.forEach((path) => {
+			value = Helper.get(item, path);
+			if (Tools.isArray(value)) {
+				size = value.length;
+				for (i = 0; i < size; i++) {
+					if (!result[i]) {
+						result[i] = [];
+					}
+					result[i].push(value[i]);
+				}
+			}
+		});
+		return result;
+	},
+
 	itemAt: (item, selector) => {
 
 		let value = Helper.get(item, selector.path);

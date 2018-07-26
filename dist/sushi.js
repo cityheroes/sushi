@@ -3355,6 +3355,27 @@ exports.default = {
 		return result;
 	},
 
+	zip: function zip(item, selector) {
+		var result = [],
+		    value = void 0,
+		    i = void 0,
+		    size = void 0;
+
+		selector.paths.forEach(function (path) {
+			value = _Helper2.default.get(item, path);
+			if (_Tools2.default.isArray(value)) {
+				size = value.length;
+				for (i = 0; i < size; i++) {
+					if (!result[i]) {
+						result[i] = [];
+					}
+					result[i].push(value[i]);
+				}
+			}
+		});
+		return result;
+	},
+
 	itemAt: function itemAt(item, selector) {
 
 		var value = _Helper2.default.get(item, selector.path);
