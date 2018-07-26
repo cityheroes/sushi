@@ -1,6 +1,7 @@
 import Helper from '../Helper';
 import Tools from '../Tools';
 import FormulaValues from 'formula-values';
+import moment from 'moment';
 
 let fvCache = {};
 
@@ -27,6 +28,11 @@ export default {
 				Helper.get(item, path, selector.default)
 			);
 		}, selector.format || '');
+	},
+
+	formatDate: (item, selector) => {
+		return moment(Helper.get(item, selector.path, selector.default))
+			.format(selector.format);
 	},
 
 	compare: (item, selector) => {

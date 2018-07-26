@@ -3246,6 +3246,10 @@ var _formulaValues = __webpack_require__(17);
 
 var _formulaValues2 = _interopRequireDefault(_formulaValues);
 
+var _moment = __webpack_require__(6);
+
+var _moment2 = _interopRequireDefault(_moment);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var fvCache = {};
@@ -3270,6 +3274,10 @@ exports.default = {
 		return selector.paths.reduce(function (partialFormat, path, index) {
 			return partialFormat.replace('{' + index + '}', _Helper2.default.get(item, path, selector.default));
 		}, selector.format || '');
+	},
+
+	formatDate: function formatDate(item, selector) {
+		return (0, _moment2.default)(_Helper2.default.get(item, selector.path, selector.default)).format(selector.format);
 	},
 
 	compare: function compare(item, selector) {
