@@ -2799,14 +2799,15 @@ var implode = function implode(collection, _implode) {
 
 var classify = function classify(collection, _classify) {
 
-	if (!_classify || !_classify.classifier) {
-		console.warn('A \'classifier\' parameter must be provided for the classify operation.');
+	if (!_classify || !_classify.path) {
+		console.warn('A \'path\' parameter must be provided for the classify operation.');
 		return collection;
 	}
 
-	var classifier = _classify.classifier,
+	var classifier = _classify.path,
 	    classifierValue = void 0,
 	    dest = _classify.dest || 'dest',
+	    id = _classify.id || classifier,
 	    defaultValue = _classify.default,
 	    tempMap = {},
 	    size = collection.length - 1,
@@ -2822,8 +2823,7 @@ var classify = function classify(collection, _classify) {
 	}
 
 	return Object.keys(tempMap).map(function (key) {
-		item[classifier] = key;
-		return _extends(_defineProperty({}, classifier, key), tempMap[key]);
+		return _extends(_defineProperty({}, id, key), tempMap[key]);
 	});
 };
 
