@@ -638,6 +638,10 @@ const evalWithSafeEnvironment = (function () {
 		return total;
 	};
 
+	const formatDate = (date, format) => {
+		return __WEBPACK_IMPORTED_MODULE_1_moment___default()(date).format(format);
+	};
+
 	return function(formula, data, metaData) {
 		return eval(formula);
 	};
