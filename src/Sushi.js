@@ -1,8 +1,6 @@
 import Cheff from './Cheff';
 import Helper from './Helper';
-import FormulaHelper from './FormulaHelper';
 import coreFilters from './CoreOperations/filters';
-// import coreSorters from './CoreOperations/sorters';
 import coreMappers from './CoreOperations/mappers';
 import coreSelectors from './CoreOperations/selectors';
 import coreReducers from './CoreOperations/reducers';
@@ -25,9 +23,6 @@ const operationsMap = {
 	pick: (collection, step) => {
 		return Cheff.pick(collection, step.cont);
 	},
-	// sorters: (collection, step) => {
-	// 	return Cheff.sort(collection, step.cont, applyOperation);
-	// },
 	mappers: (collection, step) => {
 		return Cheff.map(collection, step.cont, applyOperation);
 	},

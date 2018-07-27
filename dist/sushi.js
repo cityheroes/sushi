@@ -3250,10 +3250,6 @@ var _formulaValues = __webpack_require__(17);
 
 var _formulaValues2 = _interopRequireDefault(_formulaValues);
 
-var _moment = __webpack_require__(5);
-
-var _moment2 = _interopRequireDefault(_moment);
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var fvCache = {};
@@ -3278,10 +3274,6 @@ exports.default = {
 		return selector.paths.reduce(function (partialFormat, path, index) {
 			return partialFormat.replace('{' + index + '}', _Helper2.default.get(item, path, selector.default));
 		}, selector.format || '');
-	},
-
-	formatDate: function formatDate(item, selector) {
-		return (0, _moment2.default)(_Helper2.default.get(item, selector.path, selector.default)).format(selector.format);
 	},
 
 	compare: function compare(item, selector) {
@@ -3488,95 +3480,7 @@ exports.default = {
 };
 
 /***/ }),
-/* 12 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-
-var _Helper = __webpack_require__(0);
-
-var _Helper2 = _interopRequireDefault(_Helper);
-
-var _moment = __webpack_require__(5);
-
-var _moment2 = _interopRequireDefault(_moment);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-var _safeEval = function () {
-	var _dateDiffMeasurements2;
-
-	var _dateDiffMeasurements = (_dateDiffMeasurements2 = {
-		years: 'years',
-		months: 'months',
-		weeks: 'weeks',
-		days: 'days',
-		hours: 'hours',
-		minutes: 'minutes',
-		seconds: 'seconds',
-		y: 'years',
-		m: 'months',
-		w: 'weeks',
-		d: 'days',
-		h: 'hours'
-	}, _defineProperty(_dateDiffMeasurements2, 'm', 'minutes'), _defineProperty(_dateDiffMeasurements2, 's', 'seconds'), _dateDiffMeasurements2);
-
-	function now() {
-		return new _moment2.default().format();
-	}
-
-	function dateDiff(dateA, dateB, type) {
-		type = _dateDiffMeasurements[type] || 'days';
-		return (0, _moment2.default)(dateA).diff((0, _moment2.default)(dateB), type);
-	}
-
-	return function (item, expression) {
-		var values = [];
-		for (var i = expression.paths.length - 1; i >= 0; i--) {
-			values[i] = _Helper2.default.get(item, expression.paths[i]);
-		}
-		return eval(expression.parsedExpr);
-	};
-}();
-
-exports.default = function () {
-
-	var exprVarsRegex = /\{\{(.+)\}\}/g;
-
-	return {
-		safeEval: function safeEval(item, expression) {
-			return _safeEval(item, expression);
-		},
-		parseExpression: function parseExpression(expression) {
-			if ('string' === typeof expression) {
-				var variableHash = {};
-				var pathsArray = [];
-				var parsedExpr = {
-					originalExpr: expression,
-					parsedExpr: expression.replace(exprVarsRegex, function (variable, path) {
-						if (!variableHash[path]) {
-							variableHash[path] = pathsArray.length;
-							pathsArray.push(path);
-						}
-						return 'values[' + variableHash[path] + ']';
-					}),
-					paths: pathsArray
-				};
-				expression = parsedExpr;
-			}
-			return expression;
-		}
-	};
-}();
-
-/***/ }),
+/* 12 */,
 /* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -3584,8 +3488,6 @@ exports.default = function () {
 
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-// import coreSorters from './CoreOperations/sorters';
-
 
 var _Cheff = __webpack_require__(7);
 
@@ -3594,10 +3496,6 @@ var _Cheff2 = _interopRequireDefault(_Cheff);
 var _Helper = __webpack_require__(0);
 
 var _Helper2 = _interopRequireDefault(_Helper);
-
-var _FormulaHelper = __webpack_require__(12);
-
-var _FormulaHelper2 = _interopRequireDefault(_FormulaHelper);
 
 var _filters = __webpack_require__(8);
 
@@ -3640,9 +3538,6 @@ var operationsMap = {
 	pick: function pick(collection, step) {
 		return _Cheff2.default.pick(collection, step.cont);
 	},
-	// sorters: (collection, step) => {
-	// 	return Cheff.sort(collection, step.cont, applyOperation);
-	// },
 	mappers: function mappers(collection, step) {
 		return _Cheff2.default.map(collection, step.cont, applyOperation);
 	},
