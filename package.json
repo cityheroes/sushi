@@ -1,6 +1,6 @@
 {
   "name": "sushi-js",
-  "version": "1.2.14",
+  "version": "1.2.15",
   "description": "Transform datasets like a sushi master.",
   "main": "dist/sushi.js",
   "module": "src/Sushi.js",
@@ -21,7 +21,6 @@
     "webpack-dev-server": "^2.4.1"
   },
   "dependencies": {
-    "formula-values": "^1.0.1",
-    "moment": "^2.22.1"
+    "formula-values": "^1.0.4"
   }
 }

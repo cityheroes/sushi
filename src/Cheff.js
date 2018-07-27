@@ -252,14 +252,15 @@ const implode = (collection, implode) => {
 
 const classify = (collection, classify) => {
 
- 	if (!classify || !classify.classifier) {
-		console.warn('A \'classifier\' parameter must be provided for the classify operation.');
+ 	if (!classify || !classify.path) {
+		console.warn('A \'path\' parameter must be provided for the classify operation.');
 		return collection;
 	}
 
-	let classifier = classify.classifier,
+	let classifier = classify.path,
 		classifierValue,
 		dest = classify.dest || 'dest',
+		id = classify.id || classifier,
 		defaultValue = classify.default,
 		tempMap = {},
 		size = collection.length - 1,
@@ -275,9 +276,8 @@ const classify = (collection, classify) => {
 	}
 
 	return Object.keys(tempMap).map((key) => {
-		item[classifier] = key;
 		return {
-			[classifier]: key,
+			[id]: key,
 			...tempMap[key]
 		};
 	});

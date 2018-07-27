@@ -129,6 +129,27 @@ export default {
 		return result;
 	},
 
+	zip: (item, selector) => {
+		let result = [],
+			value,
+			i,
+			size;
+
+		selector.paths.forEach((path) => {
+			value = Helper.get(item, path);
+			if (Tools.isArray(value)) {
+				size = value.length;
+				for (i = 0; i < size; i++) {
+					if (!result[i]) {
+						result[i] = [];
+					}
+					result[i].push(value[i]);
+				}
+			}
+		});
+		return result;
+	},
+
 	itemAt: (item, selector) => {
 
 		let value = Helper.get(item, selector.path);
@@ -168,13 +189,15 @@ export default {
 		let groupMap = {},
 			groupValue,
 			group = selector.group,
-			size = value.length - 1;
+			size = value.length - 1,
+			subItem;
 
 		for (var i = size; i >= 0; i--) {
-			groupValue = Helper.get(value[i], group);
+			subItem = value[i];
+			groupValue = Helper.get(subItem, group);
 			groupValue = 'undefined' !== typeof groupValue ? groupValue : defaultValue;
 			groupMap[groupValue] = groupMap[groupValue] || [];
-			groupMap[groupValue].push(item);
+			groupMap[groupValue].push(subItem);
 		}
 
 		return groupMap;
