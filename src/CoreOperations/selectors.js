@@ -195,13 +195,15 @@ export default {
 		let groupMap = {},
 			groupValue,
 			group = selector.group,
-			size = value.length - 1;
+			size = value.length - 1,
+			subItem;
 
 		for (var i = size; i >= 0; i--) {
-			groupValue = Helper.get(value[i], group);
+			subItem = value[i];
+			groupValue = Helper.get(subItem, group);
 			groupValue = 'undefined' !== typeof groupValue ? groupValue : defaultValue;
 			groupMap[groupValue] = groupMap[groupValue] || [];
-			groupMap[groupValue].push(item);
+			groupMap[groupValue].push(subItem);
 		}
 
 		return groupMap;

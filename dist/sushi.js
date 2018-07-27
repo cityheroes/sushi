@@ -7,7 +7,7 @@
 		exports["Sushi"] = factory(require("moment"));
 	else
 		root["Sushi"] = factory(root["moment"]);
-})(this, function(__WEBPACK_EXTERNAL_MODULE_6__) {
+})(this, function(__WEBPACK_EXTERNAL_MODULE_5__) {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -414,9 +414,9 @@ exports.default = {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_underscore__ = __webpack_require__(5);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_underscore__ = __webpack_require__(6);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_underscore___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_underscore__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_moment__ = __webpack_require__(6);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_moment__ = __webpack_require__(5);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_moment___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_moment__);
 
 
@@ -714,7 +714,7 @@ class CompiledExpression {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_underscore__ = __webpack_require__(5);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_underscore__ = __webpack_require__(6);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_underscore___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_underscore__);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__Helpers__ = __webpack_require__(2);
 
@@ -813,6 +813,12 @@ class Variable {
 
 /***/ }),
 /* 5 */
+/***/ (function(module, exports) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE_5__;
+
+/***/ }),
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global, module) {var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//     Underscore.js 1.9.1
@@ -2512,12 +2518,6 @@ class Variable {
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(18), __webpack_require__(19)(module)))
 
 /***/ }),
-/* 6 */
-/***/ (function(module, exports) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
-
-/***/ }),
 /* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -3246,7 +3246,7 @@ var _formulaValues = __webpack_require__(17);
 
 var _formulaValues2 = _interopRequireDefault(_formulaValues);
 
-var _moment = __webpack_require__(6);
+var _moment = __webpack_require__(5);
 
 var _moment2 = _interopRequireDefault(_moment);
 
@@ -3423,13 +3423,15 @@ exports.default = {
 		var groupMap = {},
 		    groupValue = void 0,
 		    group = selector.group,
-		    size = value.length - 1;
+		    size = value.length - 1,
+		    subItem = void 0;
 
 		for (var i = size; i >= 0; i--) {
-			groupValue = _Helper2.default.get(value[i], group);
+			subItem = value[i];
+			groupValue = _Helper2.default.get(subItem, group);
 			groupValue = 'undefined' !== typeof groupValue ? groupValue : defaultValue;
 			groupMap[groupValue] = groupMap[groupValue] || [];
-			groupMap[groupValue].push(item);
+			groupMap[groupValue].push(subItem);
 		}
 
 		return groupMap;
@@ -3496,7 +3498,7 @@ var _Helper = __webpack_require__(0);
 
 var _Helper2 = _interopRequireDefault(_Helper);
 
-var _moment = __webpack_require__(6);
+var _moment = __webpack_require__(5);
 
 var _moment2 = _interopRequireDefault(_moment);
 
