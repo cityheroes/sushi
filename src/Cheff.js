@@ -263,10 +263,10 @@ const classify = (collection, classify) => {
 		id = classify.id || classifier,
 		defaultValue = classify.default,
 		tempMap = {},
-		size = collection.length - 1,
+		size = collection.length,
 		item;
 
-	for (var i = size; i >= 0; i--) {
+	for (var i = 0; i < size; i++) {
 		item = collection[i];
 		classifierValue = Helper.get(item, classifier);
 		classifierValue = 'undefined' !== typeof classifierValue ? classifierValue : defaultValue;
@@ -285,9 +285,11 @@ const classify = (collection, classify) => {
 
 const processParts = (parts, item, collection = []) => {
 	var newItem,
+		size = parts.length,
 		pathsMap,
 		path;
-	for (var i = 0; i < parts.length; i++) {
+
+	for (var i = 0; i < size; i++) {
 		pathsMap = parts[i];
 		newItem = {};
 		for (path in pathsMap) {

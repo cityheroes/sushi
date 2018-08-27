@@ -2808,10 +2808,10 @@ var classify = function classify(collection, _classify) {
 	    id = _classify.id || classifier,
 	    defaultValue = _classify.default,
 	    tempMap = {},
-	    size = collection.length - 1,
+	    size = collection.length,
 	    item = void 0;
 
-	for (var i = size; i >= 0; i--) {
+	for (var i = 0; i < size; i++) {
 		item = collection[i];
 		classifierValue = _Helper2.default.get(item, classifier);
 		classifierValue = 'undefined' !== typeof classifierValue ? classifierValue : defaultValue;
@@ -2828,8 +2828,12 @@ var classify = function classify(collection, _classify) {
 var processParts = function processParts(parts, item) {
 	var collection = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
 
-	var newItem, pathsMap, path;
-	for (var i = 0; i < parts.length; i++) {
+	var newItem,
+	    size = parts.length,
+	    pathsMap,
+	    path;
+
+	for (var i = 0; i < size; i++) {
 		pathsMap = parts[i];
 		newItem = {};
 		for (path in pathsMap) {
