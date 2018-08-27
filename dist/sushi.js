@@ -2808,10 +2808,10 @@ var classify = function classify(collection, _classify) {
 	    id = _classify.id || classifier,
 	    defaultValue = _classify.default,
 	    tempMap = {},
-	    size = collection.length - 1,
+	    size = collection.length,
 	    item = void 0;
 
-	for (var i = size; i >= 0; i--) {
+	for (var i = 0; i < size; i++) {
 		item = collection[i];
 		classifierValue = _Helper2.default.get(item, classifier);
 		classifierValue = 'undefined' !== typeof classifierValue ? classifierValue : defaultValue;
@@ -2823,6 +2823,44 @@ var classify = function classify(collection, _classify) {
 	return Object.keys(tempMap).map(function (key) {
 		return _extends(_defineProperty({}, id, key), tempMap[key]);
 	});
+};
+
+var processParts = function processParts(parts, item) {
+	var collection = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+
+	var newItem,
+	    size = parts.length,
+	    pathsMap,
+	    path;
+
+	for (var i = 0; i < size; i++) {
+		pathsMap = parts[i];
+		newItem = {};
+		for (path in pathsMap) {
+			newItem[pathsMap[path]] = _Helper2.default.get(item, path);
+		}
+		collection.push(newItem);
+	}
+
+	return collection;
+};
+
+var split = function split(collection, options) {
+
+	if (!options || !options.parts) {
+		console.warn('A \'parts\' parameter must be provided for the split operation.');
+		return collection;
+	}
+
+	var newCollection = [],
+	    parts = options.parts,
+	    size = collection.length;
+
+	for (var i = 0; i < size; i++) {
+		newCollection = processParts(parts, collection[i], newCollection);
+	}
+
+	return newCollection;
 };
 
 // Multi operations
@@ -2971,7 +3009,8 @@ exports.default = {
 	uniq: uniq,
 	reduce: reduce,
 	pivot: pivot,
-	classify: classify
+	classify: classify,
+	split: split
 };
 
 /***/ }),
@@ -3560,6 +3599,9 @@ var operationsMap = {
 	},
 	classify: function classify(collection, step) {
 		return _Cheff2.default.classify(collection, step.cont, applyOperation);
+	},
+	split: function split(collection, step) {
+		return _Cheff2.default.split(collection, step.cont, applyOperation);
 	}
 };
 

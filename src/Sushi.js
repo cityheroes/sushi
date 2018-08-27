@@ -50,6 +50,9 @@ const operationsMap = {
 	},
 	classify: (collection, step) => {
 		return Cheff.classify(collection, step.cont, applyOperation);
+	},
+	split: (collection, step) => {
+		return Cheff.split(collection, step.cont, applyOperation);
 	}
 };
 

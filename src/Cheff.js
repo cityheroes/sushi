@@ -263,10 +263,10 @@ const classify = (collection, classify) => {
 		id = classify.id || classifier,
 		defaultValue = classify.default,
 		tempMap = {},
-		size = collection.length - 1,
+		size = collection.length,
 		item;
 
-	for (var i = size; i >= 0; i--) {
+	for (var i = 0; i < size; i++) {
 		item = collection[i];
 		classifierValue = Helper.get(item, classifier);
 		classifierValue = 'undefined' !== typeof classifierValue ? classifierValue : defaultValue;
@@ -281,6 +281,42 @@ const classify = (collection, classify) => {
 			...tempMap[key]
 		};
 	});
+};
+
+const processParts = (parts, item, collection = []) => {
+	var newItem,
+		size = parts.length,
+		pathsMap,
+		path;
+
+	for (var i = 0; i < size; i++) {
+		pathsMap = parts[i];
+		newItem = {};
+		for (path in pathsMap) {
+			newItem[pathsMap[path]] = Helper.get(item, path);
+		}
+		collection.push(newItem);
+	}
+
+	return collection;
+}
+
+const split = (collection, options) => {
+
+ 	if (!options || !options.parts) {
+		console.warn('A \'parts\' parameter must be provided for the split operation.');
+		return collection;
+	}
+
+	let newCollection = [],
+		parts = options.parts,
+		size = collection.length;
+
+	for (var i = 0; i < size; i++) {
+		newCollection = processParts(parts, collection[i], newCollection);
+	}
+
+	return newCollection;
 };
 
 // Multi operations
@@ -456,5 +492,6 @@ export default {
 	uniq: uniq,
 	reduce: reduce,
 	pivot: pivot,
-	classify: classify
+	classify: classify,
+	split: split
 };
