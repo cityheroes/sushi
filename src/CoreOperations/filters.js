@@ -1,5 +1,8 @@
 import Tools from '../Tools';
 import Helper from '../Helper';
+import FormulaValues from 'formula-values';
+
+let fvCache = {};
 
 const applyMatch = (value, match, filterFunction) => {
 	if (Tools.isArray(match)) {
@@ -11,11 +14,28 @@ const applyMatch = (value, match, filterFunction) => {
 	}
 };
 
+const extractSubject = (item = {}, filter = {}, defaultValue = null) => {
+	if (filter.path) {
+		return Helper.get(item, filter.path);
+	} else if (filter.expr) {
+		let expr = filter.expr;
+
+		if (!fvCache[expr]) {
+			fvCache[expr] = new FormulaValues(expr);
+		}
+
+		let fv = fvCache[expr];
+		return fv.eval(item);
+	} else {
+		return defaultValue;
+	}
+};
+
 export default {
 
 	match: (item, filter) => {
 		return applyMatch(
-			Helper.get(item, filter.path),
+			extractSubject(item, filter),
 			filter.match,
 			(value, match) => {
 				return value === match;
@@ -25,7 +45,7 @@ export default {
 
 	mismatch: (item, filter) => {
 		return applyMatch(
-			Helper.get(item, filter.path),
+			extractSubject(item, filter),
 			filter.match,
 			(value, match) => {
 				return value !== match;
@@ -35,7 +55,7 @@ export default {
 
 	matchType: (item, filter) => {
 		return applyMatch(
-			Helper.get(item, filter.path),
+			extractSubject(item, filter),
 			filter.match,
 			(value, match) => {
 				return typeof value === match;
@@ -45,7 +65,7 @@ export default {
 
 	mismatchType: (item, filter) => {
 		return applyMatch(
-			Helper.get(item, filter.path),
+			extractSubject(item, filter),
 			filter.match,
 			(value, match) => {
 				return typeof value !== match;
@@ -55,7 +75,7 @@ export default {
 
 	includes: (item, filter) => {
 		return applyMatch(
-			Helper.get(item, filter.path),
+			extractSubject(item, filter),
 			filter.match,
 			(value, match) => {
 				return value.includes(match);
@@ -65,7 +85,7 @@ export default {
 
 	excludes: (item, filter) => {
 		return applyMatch(
-			Helper.get(item, filter.path),
+			extractSubject(item, filter),
 			filter.match,
 			(value, match) => {
 				return !value.includes(match);
@@ -75,7 +95,7 @@ export default {
 
 	compare: (item, filter) => {
 		return Helper.compare(
-			Helper.get(item, filter.path),
+			extractSubject(item, filter),
 			filter.match,
 			filter.operator
 		);
@@ -83,7 +103,7 @@ export default {
 
 	start: (item, filter) => {
 		return applyMatch(
-			Helper.get(item, filter.path, ''),
+			extractSubject(item, filter, ''),
 			filter.match,
 			(value, match) => {
 				return value.indexOf(match) === 0;
@@ -93,7 +113,7 @@ export default {
 
 	end: (item, filter) => {
 		return applyMatch(
-			Helper.get(item, filter.path, ''),
+			extractSubject(item, filter, ''),
 			filter.match,
 			(value, match) => {
 				return value.indexOf(match, value.length - match.length) !== -1;
