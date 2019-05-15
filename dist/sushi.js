@@ -73,7 +73,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 11);
+/******/ 	return __webpack_require__(__webpack_require__.s = 12);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -414,7 +414,7 @@ exports.default = {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_underscore__ = __webpack_require__(5);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_underscore__ = __webpack_require__(6);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_underscore___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_underscore__);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_moment__ = __webpack_require__(18);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_moment___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_moment__);
@@ -718,7 +718,7 @@ class CompiledExpression {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_underscore__ = __webpack_require__(5);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_underscore__ = __webpack_require__(6);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_underscore___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_underscore__);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__Helpers__ = __webpack_require__(2);
 
@@ -817,6 +817,44 @@ class Variable {
 
 /***/ }),
 /* 5 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Formula__ = __webpack_require__(15);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__ConcatenatedText__ = __webpack_require__(13);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__DefaultValue__ = __webpack_require__(14);
+
+
+
+
+class FormulaValue {
+
+	constructor(expression = '') {
+		if (__WEBPACK_IMPORTED_MODULE_0__Formula__["a" /* default */].isFormula(expression)) {
+			this.compiledExpression = new __WEBPACK_IMPORTED_MODULE_0__Formula__["a" /* default */](expression);
+		} else if (__WEBPACK_IMPORTED_MODULE_1__ConcatenatedText__["a" /* default */].isConcatenatedText(expression)) {
+			this.compiledExpression = new __WEBPACK_IMPORTED_MODULE_1__ConcatenatedText__["a" /* default */](expression);
+		} else {
+			this.compiledExpression = new __WEBPACK_IMPORTED_MODULE_2__DefaultValue__["a" /* default */](expression);
+		}
+	}
+
+	eval(data = {}, metaData = {}, context = '') {
+		return this.compiledExpression.eval(data, metaData, context);
+	}
+
+	static isFormulaValue(expression) {
+		return __WEBPACK_IMPORTED_MODULE_0__Formula__["a" /* default */].isFormula(expression) || __WEBPACK_IMPORTED_MODULE_1__ConcatenatedText__["a" /* default */].isConcatenatedText(expression);
+	}
+
+}
+/* harmony export (immutable) */ __webpack_exports__["default"] = FormulaValue;
+
+
+
+/***/ }),
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global, module) {var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;//     Underscore.js 1.9.1
@@ -2516,7 +2554,7 @@ class Variable {
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(16), __webpack_require__(17)(module)))
 
 /***/ }),
-/* 6 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3014,7 +3052,7 @@ exports.default = {
 };
 
 /***/ }),
-/* 7 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3034,7 +3072,13 @@ var _Helper = __webpack_require__(1);
 
 var _Helper2 = _interopRequireDefault(_Helper);
 
+var _formulaValues = __webpack_require__(5);
+
+var _formulaValues2 = _interopRequireDefault(_formulaValues);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var fvCache = {};
 
 var applyMatch = function applyMatch(value, match, filterFunction) {
 	if (_Tools2.default.isArray(match)) {
@@ -3046,56 +3090,77 @@ var applyMatch = function applyMatch(value, match, filterFunction) {
 	}
 };
 
+var extractSubject = function extractSubject() {
+	var item = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+	var filter = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+	var defaultValue = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+
+	if (filter.path) {
+		return _Helper2.default.get(item, filter.path);
+	} else if (filter.expr) {
+		var expr = filter.expr;
+
+		if (!fvCache[expr]) {
+			fvCache[expr] = new _formulaValues2.default(expr);
+		}
+
+		var fv = fvCache[expr];
+		return fv.eval(item);
+	} else {
+		return defaultValue;
+	}
+};
+
 exports.default = {
 
 	match: function match(item, filter) {
-		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
+		return applyMatch(extractSubject(item, filter), filter.match, function (value, match) {
 			return value === match;
 		});
 	},
 
 	mismatch: function mismatch(item, filter) {
-		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
+		return applyMatch(extractSubject(item, filter), filter.match, function (value, match) {
 			return value !== match;
 		});
 	},
 
 	matchType: function matchType(item, filter) {
-		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
+		return applyMatch(extractSubject(item, filter), filter.match, function (value, match) {
 			return (typeof value === 'undefined' ? 'undefined' : _typeof(value)) === match;
 		});
 	},
 
 	mismatchType: function mismatchType(item, filter) {
-		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
+		return applyMatch(extractSubject(item, filter), filter.match, function (value, match) {
 			return (typeof value === 'undefined' ? 'undefined' : _typeof(value)) !== match;
 		});
 	},
 
 	includes: function includes(item, filter) {
-		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
+		return applyMatch(extractSubject(item, filter), filter.match, function (value, match) {
 			return value.includes(match);
 		});
 	},
 
 	excludes: function excludes(item, filter) {
-		return applyMatch(_Helper2.default.get(item, filter.path), filter.match, function (value, match) {
+		return applyMatch(extractSubject(item, filter), filter.match, function (value, match) {
 			return !value.includes(match);
 		});
 	},
 
 	compare: function compare(item, filter) {
-		return _Helper2.default.compare(_Helper2.default.get(item, filter.path), filter.match, filter.operator);
+		return _Helper2.default.compare(extractSubject(item, filter), filter.match, filter.operator);
 	},
 
 	start: function start(item, filter) {
-		return applyMatch(_Helper2.default.get(item, filter.path, ''), filter.match, function (value, match) {
+		return applyMatch(extractSubject(item, filter, ''), filter.match, function (value, match) {
 			return value.indexOf(match) === 0;
 		});
 	},
 
 	end: function end(item, filter) {
-		return applyMatch(_Helper2.default.get(item, filter.path, ''), filter.match, function (value, match) {
+		return applyMatch(extractSubject(item, filter, ''), filter.match, function (value, match) {
 			return value.indexOf(match, value.length - match.length) !== -1;
 		});
 	}
@@ -3103,7 +3168,7 @@ exports.default = {
 };
 
 /***/ }),
-/* 8 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3182,7 +3247,7 @@ exports.default = {
 };
 
 /***/ }),
-/* 9 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3261,7 +3326,7 @@ exports.default = {
 };
 
 /***/ }),
-/* 10 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3279,7 +3344,7 @@ var _Tools = __webpack_require__(0);
 
 var _Tools2 = _interopRequireDefault(_Tools);
 
-var _formulaValues = __webpack_require__(15);
+var _formulaValues = __webpack_require__(5);
 
 var _formulaValues2 = _interopRequireDefault(_formulaValues);
 
@@ -3513,7 +3578,7 @@ exports.default = {
 };
 
 /***/ }),
-/* 11 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3521,7 +3586,7 @@ exports.default = {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _Cheff = __webpack_require__(6);
+var _Cheff = __webpack_require__(7);
 
 var _Cheff2 = _interopRequireDefault(_Cheff);
 
@@ -3529,19 +3594,19 @@ var _Helper = __webpack_require__(1);
 
 var _Helper2 = _interopRequireDefault(_Helper);
 
-var _filters = __webpack_require__(7);
+var _filters = __webpack_require__(8);
 
 var _filters2 = _interopRequireDefault(_filters);
 
-var _mappers = __webpack_require__(8);
+var _mappers = __webpack_require__(9);
 
 var _mappers2 = _interopRequireDefault(_mappers);
 
-var _selectors = __webpack_require__(10);
+var _selectors = __webpack_require__(11);
 
 var _selectors2 = _interopRequireDefault(_selectors);
 
-var _reducers = __webpack_require__(9);
+var _reducers = __webpack_require__(10);
 
 var _reducers2 = _interopRequireDefault(_reducers);
 
@@ -3770,7 +3835,7 @@ module.exports = function () {
 }();
 
 /***/ }),
-/* 12 */
+/* 13 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -3835,7 +3900,7 @@ class ConcatenatedText extends __WEBPACK_IMPORTED_MODULE_1__CompiledExpression__
 
 
 /***/ }),
-/* 13 */
+/* 14 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -3859,7 +3924,7 @@ class DefaultValue extends __WEBPACK_IMPORTED_MODULE_0__CompiledExpression__["a"
 
 
 /***/ }),
-/* 14 */
+/* 15 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -3914,44 +3979,6 @@ class Formula extends __WEBPACK_IMPORTED_MODULE_0__CompiledExpression__["a" /* d
 
 }
 /* harmony export (immutable) */ __webpack_exports__["a"] = Formula;
-
-
-
-/***/ }),
-/* 15 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Formula__ = __webpack_require__(14);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__ConcatenatedText__ = __webpack_require__(12);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__DefaultValue__ = __webpack_require__(13);
-
-
-
-
-class FormulaValue {
-
-	constructor(expression = '') {
-		if (__WEBPACK_IMPORTED_MODULE_0__Formula__["a" /* default */].isFormula(expression)) {
-			this.compiledExpression = new __WEBPACK_IMPORTED_MODULE_0__Formula__["a" /* default */](expression);
-		} else if (__WEBPACK_IMPORTED_MODULE_1__ConcatenatedText__["a" /* default */].isConcatenatedText(expression)) {
-			this.compiledExpression = new __WEBPACK_IMPORTED_MODULE_1__ConcatenatedText__["a" /* default */](expression);
-		} else {
-			this.compiledExpression = new __WEBPACK_IMPORTED_MODULE_2__DefaultValue__["a" /* default */](expression);
-		}
-	}
-
-	eval(data = {}, metaData = {}, context = '') {
-		return this.compiledExpression.eval(data, metaData, context);
-	}
-
-	static isFormulaValue(expression) {
-		return __WEBPACK_IMPORTED_MODULE_0__Formula__["a" /* default */].isFormula(expression) || __WEBPACK_IMPORTED_MODULE_1__ConcatenatedText__["a" /* default */].isConcatenatedText(expression);
-	}
-
-}
-/* harmony export (immutable) */ __webpack_exports__["default"] = FormulaValue;
 
 
 
