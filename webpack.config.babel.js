@@ -5,10 +5,10 @@ let webConf = {
 	entry: './src/Sushi.js',
 	target: 'web',
 	output: {
-		path: path.resolve(__dirname, 'dist'),
+		path: path.resolve(__dirname, './dist'),
 		filename: 'sushi.js',
-		libraryTarget: 'var',
 		library: 'Sushi',
+		libraryTarget: 'umd',
 		libraryExport: 'default'
 	},
 	module: {
@@ -23,7 +23,12 @@ let webConf = {
 	},
 	devtool: 'source-map',
 	externals: {
-		'moment': 'moment'
+		'moment': {
+			commonjs: 'moment',
+			commonjs2: 'moment',
+			amd: 'moment',
+			root: 'moment'
+		}
 	}
 };
 
