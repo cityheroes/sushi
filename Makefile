@@ -24,7 +24,3 @@ create-release:
 	npm publish && \
 	make version=$(version) branch=develop merge-release && \
 	git branch -d release-$(version)
-build:
-	grunt build
-serve-build:
-	grunt serve:current-dist
