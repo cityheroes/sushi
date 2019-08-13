@@ -8,6 +8,7 @@ merge-release:
 set-version:
 	echo 'Generating build...' && \
 	npm run build && \
+	git add dist && \
 	echo 'Setting version to $(version)...' && \
 	npx json -I -f package.json -e 'this.version="$(version)"' && \
 	npx json -I -f package-lock.json -e 'this.version="$(version)"' && \
