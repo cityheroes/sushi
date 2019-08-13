@@ -6,6 +6,9 @@ merge-release:
 	git merge --no-ff release-$(version) -m 'Merge release-$(version) into $(branch).' && \
 	git push origin $(branch)
 set-version:
+	echo 'Generating build...' && \
+	npm run build && \
+	git add dist && \
 	echo 'Setting version to $(version)...' && \
 	npx json -I -f package.json -e 'this.version="$(version)"' && \
 	npx json -I -f package-lock.json -e 'this.version="$(version)"' && \
@@ -24,7 +27,3 @@ create-release:
 	npm publish && \
 	make version=$(version) branch=develop merge-release && \
 	git branch -d release-$(version)
-build:
-	grunt build
-serve-build:
-	grunt serve:current-dist
