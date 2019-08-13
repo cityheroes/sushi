@@ -6,6 +6,8 @@ merge-release:
 	git merge --no-ff release-$(version) -m 'Merge release-$(version) into $(branch).' && \
 	git push origin $(branch)
 set-version:
+	echo 'Generating build...' && \
+	npm run build && \
 	echo 'Setting version to $(version)...' && \
 	npx json -I -f package.json -e 'this.version="$(version)"' && \
 	npx json -I -f package-lock.json -e 'this.version="$(version)"' && \
