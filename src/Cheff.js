@@ -480,6 +480,25 @@ const reduce = (collection, reducers, applyOperation) => {
 	}, {});
 };
 
+const attach = (collection, attachers, applyOperation) => {
+
+	if (!attachers) {
+		return collection;
+	}
+
+	if (!Array.isArray(attachers)) {
+		attachers = [attachers];
+	}
+
+	return collection.map((item) => {
+		attachers.forEach((attacher) => {
+			item[attacher.dest] = applyOperation('attacher', attacher.name, item, attacher);
+		});
+
+		return item;
+	});
+};
+
 // Cheff API
 export default {
 	overturn: overturn,
@@ -493,5 +512,6 @@ export default {
 	reduce: reduce,
 	pivot: pivot,
 	classify: classify,
-	split: split
+	split: split,
+	attach: attach
 };
