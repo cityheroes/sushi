@@ -490,9 +490,15 @@ const attach = (collection, attachers, applyOperation) => {
 		attachers = [attachers];
 	}
 
-	return collection.map((item) => {
+	return collection.map((item, index) => {
 		attachers.forEach((attacher) => {
-			item[attacher.dest] = applyOperation('attacher', attacher.name, item, attacher);
+			item[attacher.dest] = applyOperation(
+				'attacher',
+				attacher.name,
+				item,
+				attacher,
+				index
+			);
 		});
 
 		return item;
