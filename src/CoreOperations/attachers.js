@@ -2,13 +2,22 @@ import Helper from '../Helper';
 
 export default {
 
-	formulaTemplate: (item, attacher) => {
+	formulaTemplate: (item, attacher, index) => {
 		if (!attacher.template) {
 			console.warn('Missing attacher parameter (\'template\').');
 			return null;
 		}
 
-		return Helper.evalTemplate(attacher.template, item);
+		let context = {
+			$index: index,
+			item: item
+		};
+
+		if (attacher.context) {
+			context.context = attacher.context;
+		}
+
+		return Helper.evalTemplate(attacher.template, context);
 	},
 
 	template: (item, attacher) => {

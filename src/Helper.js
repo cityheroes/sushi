@@ -254,29 +254,36 @@ const evalFV = (expression, context) => {
 	return fv.eval(context);
 };
 
-const evalTemplate = (params, context) => {
+const evalTemplate = (template, context) => {
 
-	if (!params) {
+	if (!template) {
 		return {};
 	}
 
-	if (params !== Object(params)) {
-		return evalFV(params, context);
+	if (template !== Object(template)) {
+		return evalFV(template, context);
 	}
 
-	let parsedParams = Array.isArray(params) ? params.slice() : Object.assign({}, params),
-		value;
+	let evaluatedTemplate = Array.isArray(template) ? template.slice() : Object.assign({}, template),
+		value,
+		evaluatedProperty;
 
-	for (let property in parsedParams) {
-		value = parsedParams[property];
+	for (let property in evaluatedTemplate) {
+		evaluatedProperty = evalFV(property, context);
+		value = evaluatedTemplate[property];
+
 		if (value === Object(value)) {
-			parsedParams[property] = evalTemplate(value, context);
+			evaluatedTemplate[evaluatedProperty] = evalTemplate(value, context);
 		} else {
-			parsedParams[property] = evalFV(value, context);
+			evaluatedTemplate[evaluatedProperty] = evalFV(value, context);
+		}
+
+		if (evaluatedProperty !== property) {
+			delete evaluatedTemplate[property];
 		}
 	}
 
-	return parsedParams;
+	return evaluatedTemplate;
 };
 
 export default {

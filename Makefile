@@ -5,9 +5,10 @@ merge-release:
 	git pull origin $(branch) && \
 	git merge --no-ff release-$(version) -m 'Merge release-$(version) into $(branch).' && \
 	git push origin $(branch)
-set-version:
+create-build:
 	echo 'Generating build...' && \
-	npm run build && \
+	npm run build
+set-version:
 	git add dist && \
 	echo 'Setting version to $(version)...' && \
 	npx json -I -f package.json -e 'this.version="$(version)"' && \
@@ -21,6 +22,7 @@ create-tag:
 	git push origin $(version)
 create-release:
 	make version=$(version) create-release-branch && \
+	make create-build && \
 	make version=$(version) set-version && \
 	make version=$(version) branch=master merge-release && \
 	make version=$(version) branch=master create-tag && \
