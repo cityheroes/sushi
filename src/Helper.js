@@ -1,3 +1,5 @@
+import FormulaValues from 'formula-values';
+
 import tools from './Tools';
 
 const parsePath = (pathParam) => {
@@ -242,6 +244,41 @@ const compareString = (lvalue, rvalue, operator) => {
 	return operators[operator](lvalue, rvalue);
 };
 
+let fvCache = {};
+const evalFV = (expression, context) => {
+	if (!fvCache[expression]) {
+		fvCache[expression] = new FormulaValues(expression);
+	}
+
+	let fv = fvCache[expression];
+	return fv.eval(context);
+};
+
+const evalTemplate = (params, context) => {
+
+	if (!params) {
+		return {};
+	}
+
+	if (params !== Object(params)) {
+		return evalFV(params, context);
+	}
+
+	let parsedParams = Array.isArray(params) ? params.slice() : Object.assign({}, params),
+		value;
+
+	for (let property in parsedParams) {
+		value = parsedParams[property];
+		if (value === Object(value)) {
+			parsedParams[property] = evalTemplate(value, context);
+		} else {
+			parsedParams[property] = evalFV(value, context);
+		}
+	}
+
+	return parsedParams;
+};
+
 export default {
 	get: get,
 	set: set,
@@ -255,5 +292,7 @@ export default {
 	compare: compare,
 	calculate: calculate,
 	average: average,
-	compareString: compareString
+	compareString: compareString,
+	evalFV: evalFV,
+	evalTemplate: evalTemplate
 };
