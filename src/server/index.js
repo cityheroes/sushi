@@ -1,8 +1,10 @@
 import restify from 'restify';
 import restifyErrors from 'restify-errors';
+import debugLib from 'debug';
 
 import Sushi from '../Sushi';
 
+const debug = debugLib('sushi-server');
 let sushi = new Sushi({
 	verbose: true
 });
@@ -13,7 +15,6 @@ const server = restify.createServer();
 server.use(restify.plugins.bodyParser());
 
 server.post('/cook', (req, res, next) => {
-	console.log('req.body:', req.body);
 	let data = req.body.data,
 		recipe = req.body.recipe;
 
@@ -23,9 +24,10 @@ server.post('/cook', (req, res, next) => {
 	}
 
 	let result = sushi.cook(data, recipe);
+	debug(JSON.stringify(result, null, 3));
 	return res.send(200, result);
 });
 
 server.listen(port, function() {
-	console.log('%s listening at %s', server.name, server.url);
+	debug('%s listening at %s', server.name, server.url);
 });
