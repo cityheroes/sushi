@@ -12,9 +12,10 @@ const get = (obj, path, defaultValue) => {
 		return obj;
 	}
 
-	var arr = path.split('.');
+	var arr = path.split('.'),
+		size = arr.length;
 
-	while (arr.length && obj) {
+	while (size && obj) {
 		var comp = arr.shift();
 		var match = new RegExp('(.+)\\[([0-9]*)\\]').exec(comp);
 		if ((match !== null) && (match.length === 3)) {
@@ -44,13 +45,12 @@ const set = (obj, path, value) => {
 	path = path.split('.');
 
 	var nested = obj,
-			key,
-			index = -1,
-			length = path.length,
-			lastIndex = length - 1
-	;
+		key,
+		index = -1,
+		size = path.length,
+		lastIndex = size - 1;
 
-	while (nested !== null && ++index < length) {
+	while (nested !== null && ++index < size) {
 
 		key = path[index];
 
@@ -61,6 +61,31 @@ const set = (obj, path, value) => {
 		}
 
 		nested = nested[key];
+	}
+
+	return obj;
+};
+
+const unset = (obj, path) => {
+
+	path = path.split('.');
+
+	var nested = obj,
+		key,
+		index = -1,
+		size = path.length,
+		lastIndex = size - 1;
+
+	while (nested !== null && ++index < size) {
+		key = path[index];
+
+		if (index === lastIndex) {
+			delete nested[key];
+		} else if (typeof nested[key] !== 'undefined') {
+			nested = nested[key];
+		} else {
+			break;
+		}
 	}
 
 	return obj;
@@ -289,6 +314,7 @@ const evalTemplate = (template, context) => {
 export default {
 	get: get,
 	set: set,
+	unset: unset,
 	extractMap: extractMap,
 	iterateMap: iterateMap,
 	extractKeys: extractKeys,
