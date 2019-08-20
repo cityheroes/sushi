@@ -58,10 +58,13 @@ const operationsMap = {
 	},
 	split: (collection, step) => {
 		return Cheff.split(collection, step.cont, applyOperation);
-	}
+	},
+	remove: (collection, step) => {
+		return Cheff.remove(collection, step.cont);
+	},
 };
 
-const operationsList = [
+const legacyOperationsList = [
 	'overturn',
 	'filters',
 	'pick',
@@ -76,7 +79,7 @@ const operationsList = [
 
 const convertFromLegacy = (recipe, verbose) => {
 	var testStep = recipe[0];
-	if (testStep && operationsList.reduce((memo, operationName) => {
+	if (testStep && legacyOperationsList.reduce((memo, operationName) => {
 		return memo || !!testStep[operationName];
 	}, false)) {
 
