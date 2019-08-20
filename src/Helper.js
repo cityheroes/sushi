@@ -2,6 +2,19 @@ import FormulaValues from 'formula-values';
 
 import tools from './Tools';
 
+const deepNavigate = (obj = {}, callback = () => {}, path = []) => {
+	let pathCopy = path.slice();
+	for (let property in obj) {
+		pathCopy.push(property);
+
+		if (tools.isObject(obj[property])) {
+			deepNavigate(obj[property], callback, pathCopy);
+		} else {
+			callback(obj, obj[property], pathCopy);
+		}
+	}
+};
+
 const parsePath = (pathParam) => {
 	return !tools.isArray(pathParam) ? [pathParam] : pathParam;
 };
@@ -66,7 +79,7 @@ const set = (obj, path, value) => {
 	return obj;
 };
 
-const unset = (obj, path) => {
+const remove = (obj, path) => {
 
 	path = path.split('.');
 
@@ -314,7 +327,7 @@ const evalTemplate = (template, context) => {
 export default {
 	get: get,
 	set: set,
-	unset: unset,
+	remove: remove,
 	extractMap: extractMap,
 	iterateMap: iterateMap,
 	extractKeys: extractKeys,
@@ -327,5 +340,6 @@ export default {
 	average: average,
 	compareString: compareString,
 	evalFV: evalFV,
-	evalTemplate: evalTemplate
+	evalTemplate: evalTemplate,
+	deepNavigate: deepNavigate
 };
