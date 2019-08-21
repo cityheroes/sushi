@@ -1,13 +1,13 @@
 import FormulaValues from 'formula-values';
 
-import tools from './Tools';
+import Tools from './Tools';
 
 const deepNavigate = (obj = {}, callback = () => {}, path = []) => {
 	let pathCopy = path.slice();
 	for (let property in obj) {
 		pathCopy.push(property);
 
-		if (tools.isObject(obj[property])) {
+		if (Tools.isObject(obj[property])) {
 			deepNavigate(obj[property], callback, pathCopy);
 		} else {
 			callback(obj, obj[property], pathCopy);
@@ -16,21 +16,24 @@ const deepNavigate = (obj = {}, callback = () => {}, path = []) => {
 };
 
 const parsePath = (pathParam) => {
-	return !tools.isArray(pathParam) ? [pathParam] : pathParam;
+	return !Tools.isArray(pathParam) ? [pathParam] : pathParam;
 };
 
-const get = (obj, path, defaultValue) => {
+const GET_MATCH_REGEX = new RegExp('(.+)\\[([0-9]*)\\]');
 
+const get = (obj, path, defaultValue) => {
 	if (path === '') {
 		return obj;
 	}
 
 	var arr = path.split('.'),
-		size = arr.length;
+		comp,
+		match;
 
-	while (size && obj) {
-		var comp = arr.shift();
-		var match = new RegExp('(.+)\\[([0-9]*)\\]').exec(comp);
+	while (arr.length && obj) {
+		comp = arr.shift();
+		match = GET_MATCH_REGEX.exec(comp);
+
 		if ((match !== null) && (match.length === 3)) {
 			var arrayData = { arrName: match[1], arrIndex: match[2] };
 			if (obj[arrayData.arrName] !== undefined) {
@@ -124,7 +127,7 @@ const evalKeys = (keys, value) => {
 		return true;
 	}
 
-	keys = tools.isArray(keys) ? keys : [keys];
+	keys = Tools.isArray(keys) ? keys : [keys];
 
 	return keys.reduce((previousValidation, key) => {
 		let result = false;
@@ -178,7 +181,7 @@ const iterateKeys = (item, operationKeys, callback) => {
 
 const evalValue = (value, subject) => {
 
-	if (tools.isArray(subject) || tools.isObject(subject)) {
+	if (Tools.isArray(subject) || Tools.isObject(subject)) {
 		return false;
 	}
 
