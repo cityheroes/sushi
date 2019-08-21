@@ -514,7 +514,9 @@ const remove = (collection, remove) => {
 		keyRegex,
 		valueRegex,
 		keyMatch,
-		valueMatch;
+		keyMatchExists,
+		valueMatch,
+		valueMatchExists;
 
 	if (remove.keyRegex) {
 		keyRegex = new RegExp(remove.keyRegex, 'i');
@@ -528,16 +530,23 @@ const remove = (collection, remove) => {
 			return value.match && value.match(valueRegex);
 		};
 	}
-	if (remove.keyMatch) {
+	if ('undefined' !== typeof remove.keyMatch) {
 		keyMatch = remove.keyMatch;
+		keyMatchExists = true;
 		evalKeyMatch = (key) => {
 			return key === keyMatch;
 		};
 	}
-	if (remove.valueMatch) {
+	if ('undefined' !== typeof remove.valueMatch) {
 		valueMatch = remove.valueMatch;
+		valueMatchExists = true;
 		evalValueMatch = (value) => {
-			return value === valueMatch;
+			if (value) {
+				return value === valueMatch;
+			} else {
+				// Allow flexibility for falsy values
+				return value == valueMatch;
+			}
 		};
 	}
 
@@ -549,7 +558,12 @@ const remove = (collection, remove) => {
 			});
 		}
 
-		if (keyRegex || valueRegex) {
+		if (
+			keyRegex ||
+			valueRegex ||
+			keyMatchExists ||
+			valueMatchExists
+		) {
 			let key;
 			Helper.deepNavigate(item, (obj, value, path = []) => {
 				key = path.slice(-1)[0];
@@ -559,7 +573,11 @@ const remove = (collection, remove) => {
 					evalKeyMatch(key) ||
 					evalValueMatch(value)
 				) {
-					delete obj[key];
+					if (Array.isArray(obj)) {
+						obj.splice(key, 1);
+					} else {
+						delete obj[key];
+					}
 				}
 			});
 		}

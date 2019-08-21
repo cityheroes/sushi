@@ -3,14 +3,29 @@ import FormulaValues from 'formula-values';
 import Tools from './Tools';
 
 const deepNavigate = (obj = {}, callback = () => {}, path = []) => {
-	let pathCopy = path.slice();
-	for (let property in obj) {
-		pathCopy.push(property);
+	let pathCopy = path.slice(),
+		value;
+	if (Array.isArray(obj)) {
+		for (var property = 0; property < obj.length; property++) {
+			pathCopy.push(property);
+			value = obj[property];
 
-		if (Tools.isObject(obj[property])) {
-			deepNavigate(obj[property], callback, pathCopy);
-		} else {
-			callback(obj, obj[property], pathCopy);
+			if (Tools.isObjectish(value)) {
+				deepNavigate(value, callback, pathCopy);
+			} else {
+				callback(obj, value, pathCopy);
+			}
+		}
+	} else {
+		for (let property in obj) {
+			pathCopy.push(property);
+			value = obj[property];
+
+			if (Tools.isObjectish(value)) {
+				deepNavigate(value, callback, pathCopy);
+			} else {
+				callback(obj, value, pathCopy);
+			}
 		}
 	}
 };
@@ -96,7 +111,11 @@ const remove = (obj, path) => {
 		key = path[index];
 
 		if (index === lastIndex) {
-			delete nested[key];
+			if (Array.isArray(nested)) {
+				nested.splice(key, 1);
+			} else {
+				delete nested[key];
+			}
 		} else if (typeof nested[key] !== 'undefined') {
 			nested = nested[key];
 		} else {
