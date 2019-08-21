@@ -9,7 +9,7 @@ let sushi = new Sushi({
 	verbose: true
 });
 
-const port = 8080;
+const port = 8081;
 const server = restify.createServer();
 
 server.use(restify.plugins.bodyParser());
