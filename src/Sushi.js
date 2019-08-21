@@ -4,6 +4,7 @@ import coreFilters from './CoreOperations/filters';
 import coreMappers from './CoreOperations/mappers';
 import coreSelectors from './CoreOperations/selectors';
 import coreReducers from './CoreOperations/reducers';
+import coreAttachers from './CoreOperations/attachers';
 import tools from './Tools';
 
 var operationsStore = {
@@ -11,6 +12,7 @@ var operationsStore = {
 	mappers: coreMappers,
 	selectors: coreSelectors,
 	reducers: coreReducers,
+	attachers: coreAttachers,
 };
 
 const operationsMap = {
@@ -32,11 +34,14 @@ const operationsMap = {
 	selectors: (collection, step) => {
 		return Cheff.select(collection, step.cont, applyOperation);
 	},
-	uniq: (collection, step) => {
-		return Cheff.uniq(collection, step.cont);
-	},
 	reducers: (collection, step) => {
 		return [Cheff.reduce(collection, step.cont, applyOperation)];
+	},
+	attachers: (collection, step) => {
+		return Cheff.attach(collection, step.cont, applyOperation);
+	},
+	uniq: (collection, step) => {
+		return Cheff.uniq(collection, step.cont);
 	},
 	pivot: (collection, step) => {
 		return Cheff.pivot(collection, step.cont, applyOperation);
@@ -53,10 +58,13 @@ const operationsMap = {
 	},
 	split: (collection, step) => {
 		return Cheff.split(collection, step.cont, applyOperation);
-	}
+	},
+	remove: (collection, step) => {
+		return Cheff.remove(collection, step.cont);
+	},
 };
 
-const operationsList = [
+const legacyOperationsList = [
 	'overturn',
 	'filters',
 	'pick',
@@ -71,7 +79,7 @@ const operationsList = [
 
 const convertFromLegacy = (recipe, verbose) => {
 	var testStep = recipe[0];
-	if (testStep && operationsList.reduce((memo, operationName) => {
+	if (testStep && legacyOperationsList.reduce((memo, operationName) => {
 		return memo || !!testStep[operationName];
 	}, false)) {
 
@@ -162,6 +170,7 @@ module.exports = class Sushi  {
 		this.addOperations('picker', processesBundle.pickers);
 		this.addOperations('mapper', processesBundle.mappers);
 		this.addOperations('reducer', processesBundle.reducers);
+		this.addOperations('attach', processesBundle.attachers);
 	}
 
 	addOperations (type, processes) {

@@ -1,20 +1,39 @@
-import tools from './Tools';
+import FormulaValues from 'formula-values';
 
-const parsePath = (pathParam) => {
-	return !tools.isArray(pathParam) ? [pathParam] : pathParam;
+import Tools from './Tools';
+
+const deepNavigate = (obj = {}, callback = () => {}, path = []) => {
+	let pathCopy = path.slice();
+	for (let property in obj) {
+		pathCopy.push(property);
+
+		if (Tools.isObject(obj[property])) {
+			deepNavigate(obj[property], callback, pathCopy);
+		} else {
+			callback(obj, obj[property], pathCopy);
+		}
+	}
 };
 
-const get = (obj, path, defaultValue) => {
+const parsePath = (pathParam) => {
+	return !Tools.isArray(pathParam) ? [pathParam] : pathParam;
+};
 
+const GET_MATCH_REGEX = new RegExp('(.+)\\[([0-9]*)\\]');
+
+const get = (obj, path, defaultValue) => {
 	if (path === '') {
 		return obj;
 	}
 
-	var arr = path.split('.');
+	var arr = path.split('.'),
+		comp,
+		match;
 
 	while (arr.length && obj) {
-		var comp = arr.shift();
-		var match = new RegExp('(.+)\\[([0-9]*)\\]').exec(comp);
+		comp = arr.shift();
+		match = GET_MATCH_REGEX.exec(comp);
+
 		if ((match !== null) && (match.length === 3)) {
 			var arrayData = { arrName: match[1], arrIndex: match[2] };
 			if (obj[arrayData.arrName] !== undefined) {
@@ -42,13 +61,12 @@ const set = (obj, path, value) => {
 	path = path.split('.');
 
 	var nested = obj,
-			key,
-			index = -1,
-			length = path.length,
-			lastIndex = length - 1
-	;
+		key,
+		index = -1,
+		size = path.length,
+		lastIndex = size - 1;
 
-	while (nested !== null && ++index < length) {
+	while (nested !== null && ++index < size) {
 
 		key = path[index];
 
@@ -59,6 +77,31 @@ const set = (obj, path, value) => {
 		}
 
 		nested = nested[key];
+	}
+
+	return obj;
+};
+
+const remove = (obj, path) => {
+
+	path = path.split('.');
+
+	var nested = obj,
+		key,
+		index = -1,
+		size = path.length,
+		lastIndex = size - 1;
+
+	while (nested !== null && ++index < size) {
+		key = path[index];
+
+		if (index === lastIndex) {
+			delete nested[key];
+		} else if (typeof nested[key] !== 'undefined') {
+			nested = nested[key];
+		} else {
+			break;
+		}
 	}
 
 	return obj;
@@ -84,7 +127,7 @@ const evalKeys = (keys, value) => {
 		return true;
 	}
 
-	keys = tools.isArray(keys) ? keys : [keys];
+	keys = Tools.isArray(keys) ? keys : [keys];
 
 	return keys.reduce((previousValidation, key) => {
 		let result = false;
@@ -138,7 +181,7 @@ const iterateKeys = (item, operationKeys, callback) => {
 
 const evalValue = (value, subject) => {
 
-	if (tools.isArray(subject) || tools.isObject(subject)) {
+	if (Tools.isArray(subject) || Tools.isObject(subject)) {
 		return false;
 	}
 
@@ -242,9 +285,52 @@ const compareString = (lvalue, rvalue, operator) => {
 	return operators[operator](lvalue, rvalue);
 };
 
+let fvCache = {};
+const evalFV = (expression, context) => {
+	if (!fvCache[expression]) {
+		fvCache[expression] = new FormulaValues(expression);
+	}
+
+	let fv = fvCache[expression];
+	return fv.eval(context);
+};
+
+const evalTemplate = (template, context) => {
+
+	if (!template) {
+		return {};
+	}
+
+	if (template !== Object(template)) {
+		return evalFV(template, context);
+	}
+
+	let evaluatedTemplate = Array.isArray(template) ? template.slice() : Object.assign({}, template),
+		value,
+		evaluatedProperty;
+
+	for (let property in evaluatedTemplate) {
+		evaluatedProperty = evalFV(property, context);
+		value = evaluatedTemplate[property];
+
+		if (value === Object(value)) {
+			evaluatedTemplate[evaluatedProperty] = evalTemplate(value, context);
+		} else {
+			evaluatedTemplate[evaluatedProperty] = evalFV(value, context);
+		}
+
+		if (evaluatedProperty !== property) {
+			delete evaluatedTemplate[property];
+		}
+	}
+
+	return evaluatedTemplate;
+};
+
 export default {
 	get: get,
 	set: set,
+	remove: remove,
 	extractMap: extractMap,
 	iterateMap: iterateMap,
 	extractKeys: extractKeys,
@@ -255,5 +341,8 @@ export default {
 	compare: compare,
 	calculate: calculate,
 	average: average,
-	compareString: compareString
+	compareString: compareString,
+	evalFV: evalFV,
+	evalTemplate: evalTemplate,
+	deepNavigate: deepNavigate
 };

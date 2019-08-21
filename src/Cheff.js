@@ -1,17 +1,17 @@
-import tools from './Tools';
+import Tools from './Tools';
 import Helper from './Helper';
 
 // Uni operations
 const overturnOperation = (collection, item, pivot, parentDest, childDest, includeEmpty = false) => {
-	var parent = tools.omit(item, pivot);
+	var parent = Tools.omit(item, pivot);
 	let child = item[pivot];
 
-	if (tools.isArray(child)) {
+	if (Tools.isArray(child)) {
 		if (includeEmpty && child.length === 0) {
 			child.push({});
 		}
 		return collection.concat(child.map((subitem) => {
-			if (tools.isObject(subitem)) {
+			if (Tools.isObject(subitem)) {
 				subitem[parentDest] = parent;
 			} else if (childDest) {
 				let swapSubitem = {};
@@ -21,7 +21,7 @@ const overturnOperation = (collection, item, pivot, parentDest, childDest, inclu
 			}
 			return subitem;
 		}));
-	} else if (tools.isObject(child) || (includeEmpty && (child = {}))) {
+	} else if (Tools.isObject(child) || (includeEmpty && (child = {}))) {
 		child[parentDest] = parent;
 		collection.push(child);
 		return collection;
@@ -480,6 +480,94 @@ const reduce = (collection, reducers, applyOperation) => {
 	}, {});
 };
 
+const attach = (collection, attachers, applyOperation) => {
+
+	if (!attachers) {
+		return collection;
+	}
+
+	if (!Array.isArray(attachers)) {
+		attachers = [attachers];
+	}
+
+	return collection.map((item, index) => {
+		attachers.forEach((attacher) => {
+			item[attacher.dest] = applyOperation(
+				'attacher',
+				attacher.name,
+				item,
+				attacher,
+				index
+			);
+		});
+
+		return item;
+	});
+};
+
+const remove = (collection, remove) => {
+	let falsyEval = () => { return false; },
+		evalKeyRegex = falsyEval,
+		evalValueRegex = falsyEval,
+		evalKeyMatch = falsyEval,
+		evalValueMatch = falsyEval,
+		keyRegex,
+		valueRegex,
+		keyMatch,
+		valueMatch;
+
+	if (remove.keyRegex) {
+		keyRegex = new RegExp(remove.keyRegex, 'i');
+		evalKeyRegex = (key) => {
+			return key.match && key.match(keyRegex);
+		};
+	}
+	if (remove.valueRegex) {
+		valueRegex = new RegExp(remove.valueRegex, 'i');
+		evalValueRegex = (value) => {
+			return value.match && value.match(valueRegex);
+		};
+	}
+	if (remove.keyMatch) {
+		keyMatch = remove.keyMatch;
+		evalKeyMatch = (key) => {
+			return key === keyMatch;
+		};
+	}
+	if (remove.valueMatch) {
+		valueMatch = remove.valueMatch;
+		evalValueMatch = (value) => {
+			return value === valueMatch;
+		};
+	}
+
+	return collection.map((item) => {
+
+		if (remove.paths) {
+			remove.paths.forEach((path) => {
+				Helper.remove(item, path);
+			});
+		}
+
+		if (keyRegex || valueRegex) {
+			let key;
+			Helper.deepNavigate(item, (obj, value, path = []) => {
+				key = path.slice(-1)[0];
+				if (
+					evalKeyRegex(key) ||
+					evalValueRegex(value) ||
+					evalKeyMatch(key) ||
+					evalValueMatch(value)
+				) {
+					delete obj[key];
+				}
+			});
+		}
+
+		return item;
+	});
+};
+
 // Cheff API
 export default {
 	overturn: overturn,
@@ -493,5 +581,7 @@ export default {
 	reduce: reduce,
 	pivot: pivot,
 	classify: classify,
-	split: split
+	split: split,
+	attach: attach,
+	remove: remove
 };

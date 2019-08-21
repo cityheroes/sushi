@@ -1,9 +1,7 @@
 import path from 'path';
 
-let webConf = {
-	mode: 'production',
+export default () => ({
 	entry: './src/Sushi.js',
-	target: 'web',
 	output: {
 		path: path.resolve(__dirname, './dist'),
 		filename: 'sushi.js',
@@ -12,24 +10,16 @@ let webConf = {
 		libraryExport: 'default'
 	},
 	module: {
-		rules: [{
-			test: /\.js$/,
-			exclude: /node_modules/,
-			loader: 'babel-loader'
-		}]
+		rules: [
+			{
+				test: /\.js$/,
+				exclude: /node_modules/,
+				loader: "babel-loader"
+			}
+		]
 	},
-	stats: {
-		colors: true
-	},
-	devtool: 'source-map',
 	externals: {
-		'moment': {
-			commonjs: 'moment',
-			commonjs2: 'moment',
-			amd: 'moment',
-			root: 'moment'
-		}
+		'FormulaValues': 'formula-values',
+		'moment': 'moment'
 	}
-};
-
-export default () => (webConf);
+});
