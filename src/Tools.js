@@ -7,6 +7,10 @@ const isObject = (obj) => {
 	return Object.prototype.toString.call(obj) === '[object Object]';
 };
 
+const isObjectish = (obj) => {
+	return obj === Object(obj);
+};
+
 const omit = (obj, keys) => {
 
 	if (!isObject(obj)) {
@@ -29,5 +33,6 @@ const omit = (obj, keys) => {
 export default {
 	isArray: isArray,
 	isObject: isObject,
+	isObjectish: isObjectish,
 	omit: omit,
 };
