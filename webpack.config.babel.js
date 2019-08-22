@@ -7,14 +7,15 @@ export default () => ({
 		filename: 'sushi.js',
 		library: 'Sushi',
 		libraryTarget: 'umd',
-		libraryExport: 'default'
+		libraryExport: 'default',
+		globalObject: 'this'
 	},
 	module: {
 		rules: [
 			{
 				test: /\.js$/,
 				exclude: /node_modules/,
-				loader: "babel-loader"
+				loader: 'babel-loader'
 			}
 		]
 	},
