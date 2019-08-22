@@ -1,6 +1,7 @@
 import path from 'path';
 
 export default () => ({
+	mode: 'production',
 	entry: './src/Sushi.js',
 	output: {
 		path: path.resolve(__dirname, './dist'),
@@ -15,7 +16,21 @@ export default () => ({
 			{
 				test: /\.js$/,
 				exclude: /node_modules/,
-				loader: 'babel-loader'
+				use: {
+					loader: 'babel-loader',
+					options: {
+						presets: [
+							'@babel/env',
+							{
+								targets: {
+									esmodules: true,
+									node: 'current'
+								},
+								modules: 'auto'
+							}
+						],
+					}
+				}
 			}
 		]
 	},

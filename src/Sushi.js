@@ -158,8 +158,7 @@ function sushiCook (collection, recipe, parameters) {
 	return collection;
 }
 
-// Cannot use 'export default' for compatibility issues
-module.exports = class Sushi  {
+class Sushi  {
 
 	constructor (options = {}) {
 		this.options = options;
@@ -219,4 +218,6 @@ module.exports = class Sushi  {
 		return Helper;
 	}
 
-};
+}
+
+export default Sushi;
