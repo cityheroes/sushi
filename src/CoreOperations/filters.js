@@ -1,6 +1,7 @@
+import FormulaValues from 'formula-values';
+
 import Tools from '../Tools';
 import Helper from '../Helper';
-import FormulaValues from 'formula-values';
 
 let fvCache = {};
 

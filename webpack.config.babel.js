@@ -1,19 +1,29 @@
 import path from 'path';
 
 export default () => ({
+	mode: 'production',
 	entry: './src/Sushi.js',
 	output: {
-		path: path.resolve(__dirname, 'dist'),
+		path: path.resolve(__dirname, './dist'),
 		filename: 'sushi.js',
+		library: 'Sushi',
 		libraryTarget: 'umd',
-		library: 'Sushi'
+		libraryExport: 'default',
+		globalObject: 'this'
 	},
 	module: {
 		rules: [
 			{
 				test: /\.js$/,
 				exclude: /node_modules/,
-				loader: "babel-loader"
+				use: {
+					loader: 'babel-loader',
+					options: {
+						presets: [
+							'@babel/env'
+						],
+					}
+				}
 			}
 		]
 	},
