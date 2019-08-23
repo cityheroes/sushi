@@ -158,7 +158,7 @@ function sushiCook (collection, recipe, parameters) {
 	return collection;
 }
 
-class Sushi  {
+export default class Sushi  {
 
 	constructor (options = {}) {
 		this.options = options;
@@ -218,6 +218,4 @@ class Sushi  {
 		return Helper;
 	}
 
-}
-
-export default Sushi;
+};

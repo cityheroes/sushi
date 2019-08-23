@@ -20,14 +20,7 @@ export default () => ({
 					loader: 'babel-loader',
 					options: {
 						presets: [
-							'@babel/env',
-							{
-								targets: {
-									esmodules: true,
-									node: 'current'
-								},
-								modules: 'auto'
-							}
+							'@babel/env'
 						],
 					}
 				}
