@@ -565,20 +565,12 @@ const remove = (collection, remove) => {
 			valueMatchExists
 		) {
 			let key;
-			Helper.deepNavigate(item, (obj, value, path = []) => {
+			Helper.deepDelete(item, (obj, value, path = []) => {
 				key = path.slice(-1)[0];
-				if (
-					evalKeyRegex(key) ||
+				return evalKeyRegex(key) ||
 					evalValueRegex(value) ||
 					evalKeyMatch(key) ||
-					evalValueMatch(value)
-				) {
-					if (Array.isArray(obj)) {
-						obj.splice(key, 1);
-					} else {
-						delete obj[key];
-					}
-				}
+					evalValueMatch(value);
 			});
 		}
 

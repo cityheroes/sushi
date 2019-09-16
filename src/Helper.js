@@ -2,29 +2,68 @@ import FormulaValues from 'formula-values';
 
 import Tools from './Tools';
 
-const deepNavigate = (obj = {}, callback = () => {}, path = []) => {
-	let pathCopy = path.slice(),
-		value;
-	if (Array.isArray(obj)) {
-		for (var property = 0; property < obj.length; property++) {
-			pathCopy.push(property);
-			value = obj[property];
+const deepNavigate = (target = {}, callback = () => {}, path = []) => {
+	let value;
+	if (Array.isArray(target)) {
+		for (let index = 0; index < target.length; index++) {
+			let pathCopy = path.slice();
+			pathCopy.push(index);
+			value = target[index];
 
 			if (Tools.isObjectish(value)) {
 				deepNavigate(value, callback, pathCopy);
 			} else {
-				callback(obj, value, pathCopy);
+				callback(target, value, pathCopy);
 			}
 		}
 	} else {
-		for (let property in obj) {
+		for (let property in target) {
+			let pathCopy = path.slice();
 			pathCopy.push(property);
-			value = obj[property];
+			value = target[property];
 
 			if (Tools.isObjectish(value)) {
 				deepNavigate(value, callback, pathCopy);
 			} else {
-				callback(obj, value, pathCopy);
+				callback(target, value, pathCopy);
+			}
+		}
+	}
+};
+
+const deepDelete = (target = {}, deleteEvaluator = () => {}, path = []) => {
+	let value;
+	if (Array.isArray(target)) {
+		let deleteIndexes = [];
+		for (let index = 0; index < target.length; index++) {
+			let pathCopy = path.slice();
+			pathCopy.push(index);
+			value = target[index];
+
+			if (Tools.isObjectish(value)) {
+				deepDelete(value, deleteEvaluator, pathCopy);
+			} else {
+				if (deleteEvaluator(target, value, pathCopy)) {
+					deleteIndexes.push(index);
+				}
+			}
+		}
+
+		if (deleteIndexes.length) {
+			for (let i = deleteIndexes.length - 1; i >= 0; i--) {
+				target.splice(deleteIndexes[i], 1);
+			}
+		}
+	} else {
+		for (let property in target) {
+			let pathCopy = path.slice();
+			pathCopy.push(property);
+			value = target[property];
+
+			if (Tools.isObjectish(value)) {
+				deepDelete(value, deleteEvaluator, pathCopy);
+			} else if (deleteEvaluator(target, value, pathCopy)) {
+				delete target[property];
 			}
 		}
 	}
@@ -363,5 +402,6 @@ export default {
 	compareString: compareString,
 	evalFV: evalFV,
 	evalTemplate: evalTemplate,
-	deepNavigate: deepNavigate
+	deepNavigate: deepNavigate,
+	deepDelete: deepDelete
 };
