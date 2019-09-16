@@ -21,7 +21,7 @@ export default () => ({
 					options: {
 						presets: [
 							'@babel/env'
-						],
+						]
 					}
 				}
 			}
