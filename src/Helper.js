@@ -42,10 +42,8 @@ const deepDelete = (target = {}, deleteEvaluator = () => {}, path = []) => {
 
 			if (Tools.isObjectish(value)) {
 				deepDelete(value, deleteEvaluator, pathCopy);
-			} else {
-				if (deleteEvaluator(target, value, pathCopy)) {
-					deleteIndexes.push(index);
-				}
+			} else if (deleteEvaluator(target, value, pathCopy)) {
+				deleteIndexes.push(index);
 			}
 		}
 
