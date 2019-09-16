@@ -545,7 +545,11 @@ const remove = (collection, remove) => {
 				return value === valueMatch;
 			} else {
 				// Allow flexibility for falsy values
-				return value == valueMatch;
+				if (Object.is(value, NaN)) {
+					return null == valueMatch;
+				} else {
+					return value == valueMatch;
+				}
 			}
 		};
 	}
