@@ -2,6 +2,7 @@
 
 - **keyMatch**: Un valor o expresión regular para seleccionar una llave para quitar del item (la comparación de tipo se aplica)
 - **valueMatch**: Un valor o expresión regular para seleccionar una llave para quitar del item en base al **valor** (la comparación de tipo se aplica)
+- **replacement**: El valor por el cual se hará el reemplazo si es que se encuentra algo. Puede contener FormulaValues.
 
 Entonces, si tenemos esta colección:
 
