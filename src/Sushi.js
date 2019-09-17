@@ -1,11 +1,11 @@
-import Cheff from './Cheff';
+import Cheff from './cheff';
 import Helper from './common/Helper';
 import Tools from './common/Tools';
-import coreFilters from './CoreOperations/filters';
-import coreMappers from './CoreOperations/mappers';
-import coreSelectors from './CoreOperations/selectors';
-import coreReducers from './CoreOperations/reducers';
-import coreAttachers from './CoreOperations/attachers';
+import coreFilters from './core-operations/filters';
+import coreMappers from './core-operations/mappers';
+import coreSelectors from './core-operations/selectors';
+import coreReducers from './core-operations/reducers';
+import coreAttachers from './core-operations/attachers';
 
 var operationsStore = {
 	filters: coreFilters,
