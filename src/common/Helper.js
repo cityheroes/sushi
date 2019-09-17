@@ -341,8 +341,7 @@ const compareString = (lvalue, rvalue, operator) => {
 	return operators[operator](lvalue, rvalue);
 };
 
-let fvCache = {};
-const evalFV = (expression, context) => {
+const evalFV = (expression, context, fvCache = {}) => {
 	if (!fvCache[expression]) {
 		fvCache[expression] = new FormulaValues(expression);
 	}
@@ -351,14 +350,14 @@ const evalFV = (expression, context) => {
 	return fv.eval(context);
 };
 
-const evalTemplate = (template, context) => {
+const evalTemplate = (template, context, fvCache = {}) => {
 
 	if (!template) {
 		return {};
 	}
 
 	if (template !== Object(template)) {
-		return evalFV(template, context);
+		return evalFV(template, context, fvCache);
 	}
 
 	let evaluatedTemplate = Array.isArray(template) ? template.slice() : Object.assign({}, template),
@@ -366,13 +365,13 @@ const evalTemplate = (template, context) => {
 		evaluatedProperty;
 
 	for (let property in evaluatedTemplate) {
-		evaluatedProperty = evalFV(property, context);
+		evaluatedProperty = evalFV(property, context, fvCache);
 		value = evaluatedTemplate[property];
 
 		if (value === Object(value)) {
 			evaluatedTemplate[evaluatedProperty] = evalTemplate(value, context);
 		} else {
-			evaluatedTemplate[evaluatedProperty] = evalFV(value, context);
+			evaluatedTemplate[evaluatedProperty] = evalFV(value, context, fvCache);
 		}
 
 		if (evaluatedProperty !== property) {
