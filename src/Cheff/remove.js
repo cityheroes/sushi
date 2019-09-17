@@ -3,12 +3,8 @@ import Utils from './Utils';
 
 const remove = (collection, remove) => {
 	let {
-		evalKeyRegex,
-		evalValueRegex,
 		evalKeyMatch,
 		evalValueMatch,
-		keyRegex,
-		valueRegex,
 		keyMatchExists,
 		valueMatchExists
 	} = Utils.initializeMatchers(remove);
@@ -23,18 +19,13 @@ const remove = (collection, remove) => {
 		}
 
 		if (
-			keyRegex ||
-			valueRegex ||
 			keyMatchExists ||
 			valueMatchExists
 		) {
 			let key;
 			Helper.deepDelete(item, (obj, value, path = []) => {
 				key = path.slice(-1)[0];
-				return evalKeyRegex(key) ||
-					evalValueRegex(value) ||
-					evalKeyMatch(key) ||
-					evalValueMatch(value);
+				return evalKeyMatch(key) || evalValueMatch(value);
 			});
 		}
 
