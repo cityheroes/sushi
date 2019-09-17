@@ -1,5 +1,5 @@
-import tools from '../Tools';
-import Helper from '../Helper';
+import tools from '../common/Tools';
+import Helper from '../common/Helper';
 
 const matchBehavior = (reducer, previousValue, value, reduceOperation) => {
 	if (reducer.match) {

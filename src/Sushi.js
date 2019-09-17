@@ -1,11 +1,11 @@
 import Cheff from './Cheff';
-import Helper from './Helper';
+import Helper from './common/Helper';
+import Tools from './common/Tools';
 import coreFilters from './CoreOperations/filters';
 import coreMappers from './CoreOperations/mappers';
 import coreSelectors from './CoreOperations/selectors';
 import coreReducers from './CoreOperations/reducers';
 import coreAttachers from './CoreOperations/attachers';
-import tools from './Tools';
 
 var operationsStore = {
 	filters: coreFilters,
@@ -139,9 +139,9 @@ const invalidOperation = (type, name) => {
 
 function sushiCook (collection, recipe, parameters) {
 
-	if (tools.isObject(recipe)) {
+	if (Tools.isObject(recipe)) {
 		recipe = [recipe];
-	} else if (!tools.isArray(recipe)) {
+	} else if (!Tools.isArray(recipe)) {
 		recipe = [];
 	}
 

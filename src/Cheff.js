@@ -1,5 +1,5 @@
-import Tools from './Tools';
-import Helper from './Helper';
+import Tools from './common/Tools';
+import Helper from './common/Helper';
 
 // Uni operations
 const overturnOperation = (collection, item, pivot, parentDest, childDest, includeEmpty = false) => {
