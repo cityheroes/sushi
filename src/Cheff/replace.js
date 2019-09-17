@@ -5,31 +5,49 @@ const processReplacement = (replacement, context, fvCache) => {
 	return Helper.evalFV(replacement, context, fvCache);
 };
 
+const processMatchResult = (matchResult, matchDomain, baseContext) => {
+	if (Array.isArray(matchResult)) {
+		let context = {
+			[matchDomain]: {}
+		};
+		for (var i = 0; i < matchResult.length; i++) {
+			context[matchDomain][i] = matchResult[i];
+		}
+		return Object.assign(context, baseContext);
+	} else {
+		return baseContext;
+	}
+};
+
 const processItem = (item, index, operationSpec) => {
 	let matchers = Utils.initializeMatchers(operationSpec);
 
-	if (
-		matchers.keyRegex ||
-		matchers.valueRegex ||
-		matchers.keyMatchExists ||
-		matchers.valueMatchExists
-	) {
+	if (matchers.keyMatchExists || matchers.valueMatchExists) {
 		let replacement = operationSpec.replacement,
 			key,
-			context = {
+			keyMatchResult,
+			valueMatchResult,
+			baseContext = {
 				$index: index,
 				item: item
 			},
+			context,
 			fvCache = {};
 
 		Helper.deepNavigate(item, (obj, value, path = []) => {
 			key = path.slice(-1)[0];
-			if (
-				matchers.evalKeyRegex(key) ||
-				matchers.evalValueRegex(value) ||
-				matchers.evalKeyMatch(key) ||
-				matchers.evalValueMatch(value)
-			) {
+			keyMatchResult = matchers.evalKeyMatch(key);
+			valueMatchResult = matchers.evalValueMatch(value);
+
+			context = null;
+			if (keyMatchResult) {
+				context = processMatchResult(keyMatchResult, 'keyMatch', baseContext);
+			}
+			if (valueMatchResult) {
+				context = processMatchResult(valueMatchResult, 'valueMatch', baseContext);
+			}
+
+			if (context) {
 				obj[key] = processReplacement(replacement, context, fvCache);
 			}
 		});
