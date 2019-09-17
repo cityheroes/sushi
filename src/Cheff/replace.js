@@ -48,6 +48,8 @@ const processItem = (item, index, operationSpec) => {
 			}
 
 			if (context) {
+				context.key = key;
+				context.value = value;
 				obj[key] = processReplacement(replacement, context, fvCache);
 			}
 		});
