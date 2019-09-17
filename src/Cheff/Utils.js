@@ -25,7 +25,11 @@ const initializeMatchers = (operationSpec) => {
 		let keyMatch = operationSpec.keyMatch;
 		keyMatchExists = true;
 		evalKeyMatch = (key) => {
-			return key === keyMatch;
+			if (key.match) {
+				return key.match(keyMatch);
+			} else {
+				return key === keyMatch;
+			}
 		};
 	}
 	if ('undefined' !== typeof operationSpec.valueMatch) {
@@ -33,7 +37,11 @@ const initializeMatchers = (operationSpec) => {
 		valueMatchExists = true;
 		evalValueMatch = (value) => {
 			if (value) {
-				return value === valueMatch;
+				if (value.match) {
+					return value.match(valueMatch);
+				} else {
+					return value === valueMatch;
+				}
 			} else {
 				// Allow flexibility for falsy values
 				if (Object.is(value, NaN)) {
