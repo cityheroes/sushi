@@ -12,11 +12,12 @@ const remove = (collection, remove) => {
 		keyMatchExists,
 		valueMatchExists
 	} = Utils.initializeMatchers(remove);
+	let paths = remove.paths;
 
 	return collection.map((item) => {
 
-		if (remove.paths) {
-			remove.paths.forEach((path) => {
+		if (paths) {
+			paths.forEach((path) => {
 				Helper.remove(item, path);
 			});
 		}
