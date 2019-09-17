@@ -38,9 +38,7 @@ const processItem = (item, index, operationSpec) => {
 	return item;
 };
 
-const replace = (collection, operationSpec) => {
-	let replacers = operationSpec.cont || [];
-
+const replace = (collection, replacers = []) => {
 	return collection.map((item, index) => {
 		replacers.forEach((replacer) => {
 			item = processItem(item, index, replacer);

@@ -62,6 +62,9 @@ const operationsMap = {
 	remove: (collection, step) => {
 		return Cheff.remove(collection, step.cont);
 	},
+	replace: (collection, step) => {
+		return Cheff.replace(collection, step.cont);
+	}
 };
 
 const legacyOperationsList = [

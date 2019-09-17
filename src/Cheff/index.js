@@ -12,6 +12,7 @@ import classify from  './classify';
 import split from  './split';
 import attach from  './attach';
 import remove from  './remove';
+import replace from  './replace';
 
 export default {
 	overturn: overturn,
@@ -27,5 +28,6 @@ export default {
 	classify: classify,
 	split: split,
 	attach: attach,
-	remove: remove
+	remove: remove,
+	replace: replace
 };
