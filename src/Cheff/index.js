@@ -13,6 +13,7 @@ import split from  './split';
 import attach from  './attach';
 import remove from  './remove';
 import replace from  './replace';
+import explodeArrayProps from  './explodeArrayProps';
 
 export default {
 	overturn: overturn,
@@ -29,5 +30,6 @@ export default {
 	split: split,
 	attach: attach,
 	remove: remove,
-	replace: replace
+	replace: replace,
+	explodeArrayProps: explodeArrayProps
 };

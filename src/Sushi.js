@@ -64,6 +64,9 @@ const operationsMap = {
 	},
 	replace: (collection, step) => {
 		return Cheff.replace(collection, step.cont);
+	},
+	explodeArrayProps: (collection, step) => {
+		return Cheff.explodeArrayProps(collection, step.cont);
 	}
 };
 
