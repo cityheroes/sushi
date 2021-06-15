@@ -34,6 +34,9 @@ const operationsMap = {
 	selectors: (collection, step) => {
 		return Cheff.select(collection, step.cont, applyOperation);
 	},
+	subreducers: (collection, step) => {
+		return Cheff.subreduce(collection, step.cont);
+	},
 	reducers: (collection, step) => {
 		return [Cheff.reduce(collection, step.cont, applyOperation)];
 	},
@@ -67,6 +70,9 @@ const operationsMap = {
 	},
 	explodeArrayProps: (collection, step) => {
 		return Cheff.explodeArrayProps(collection, step.cont);
+	},
+	sorters: (collection, step) => {
+		return Cheff.sort(collection, step.cont);
 	}
 };
 
