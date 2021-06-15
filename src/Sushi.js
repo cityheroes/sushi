@@ -34,6 +34,9 @@ const operationsMap = {
 	selectors: (collection, step) => {
 		return Cheff.select(collection, step.cont, applyOperation);
 	},
+	subreducers: (collection, step) => {
+		return Cheff.subreduce(collection, step.cont);
+	},
 	reducers: (collection, step) => {
 		return [Cheff.reduce(collection, step.cont, applyOperation)];
 	},
