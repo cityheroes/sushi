@@ -6,6 +6,7 @@ import map from  './map';
 import explode from  './explode';
 import select from  './select';
 import uniq from  './uniq';
+import subreduce from './subreduce';
 import reduce from  './reduce';
 import pivot from  './pivot';
 import classify from  './classify';
@@ -31,5 +32,6 @@ export default {
 	attach: attach,
 	remove: remove,
 	replace: replace,
-	explodeArrayProps: explodeArrayProps
+	explodeArrayProps: explodeArrayProps,
+	subreduce: subreduce
 };
