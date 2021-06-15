@@ -67,6 +67,9 @@ const operationsMap = {
 	},
 	explodeArrayProps: (collection, step) => {
 		return Cheff.explodeArrayProps(collection, step.cont);
+	},
+	sorters: (collection, step) => {
+		return Cheff.sort(collection, step.cont);
 	}
 };
 
