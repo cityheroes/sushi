@@ -17,7 +17,16 @@ export default {
 	},
 
 	split: (item, selector) => {
-		return Helper.get(item, selector.path, '').split(selector.separator || ' ');
+		const value = Helper.get(item, selector.path, '');
+		let sanitizedValue;
+		if ('string' === typeof value) {
+			sanitizedValue = value;
+		} else if ('number' === typeof value) {
+			sanitizedValue = '' + value;
+		} else {
+			sanitizedValue = '';
+		}
+		return sanitizedValue.split(selector.separator || ' ');
 	},
 
 	format: (item, selector) => {

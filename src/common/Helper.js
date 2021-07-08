@@ -102,7 +102,7 @@ const get = (obj, path, defaultValue) => {
 		}
 	}
 
-	return ('undefined' === typeof obj) ? defaultValue : obj;
+	return ('undefined' === typeof obj || arr.length > 0) ? defaultValue : obj;
 };
 
 /**
