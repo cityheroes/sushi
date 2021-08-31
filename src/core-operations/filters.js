@@ -16,8 +16,9 @@ const applyMatch = (value, match, filterFunction) => {
 };
 
 const extractSubject = (item = {}, filter = {}, defaultValue = null) => {
+	defaultValue = defaultValue || filter.default || null;
 	if (filter.path) {
-		return Helper.get(item, filter.path);
+		return Helper.get(item, filter.path, defaultValue);
 	} else if (filter.expr) {
 		let expr = filter.expr;
 
