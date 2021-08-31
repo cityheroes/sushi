@@ -1,6 +1,6 @@
 {
   "name": "sushi-js",
-  "version": "1.5.4",
+  "version": "1.5.5",
   "description": "Transform datasets like a sushi master.",
   "main": "dist/sushi.js",
   "module": "src/Sushi.js",
