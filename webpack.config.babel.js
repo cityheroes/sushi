@@ -28,7 +28,7 @@ export default () => ({
 		]
 	},
 	externals: {
-		'FormulaValues': 'formula-values',
+		'formula-values': 'formula-values',
 		'moment': 'moment'
 	}
 });
