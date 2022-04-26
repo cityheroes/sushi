@@ -1,4 +1,4 @@
-import FormulaValues from 'formula-values';
+import { FormulaValue } from 'formula-values';
 
 import Tools from './Tools';
 
@@ -71,7 +71,7 @@ const parsePath = (pathParam) => {
 	return !Tools.isArray(pathParam) ? [pathParam] : pathParam;
 };
 
-const GET_MATCH_REGEX = new RegExp('(.+)\\[([0-9]*)\\]');
+const GET_MATCH_REGEX = new RegExp('(.+)\\[([0-9]*)]');
 
 const get = (obj, path, defaultValue) => {
 	if (path === '') {
@@ -343,7 +343,7 @@ const compareString = (lvalue, rvalue, operator) => {
 
 const evalFV = (expression, context, fvCache = {}) => {
 	if (!fvCache[expression]) {
-		fvCache[expression] = new FormulaValues(expression);
+		fvCache[expression] = new FormulaValue(expression);
 	}
 
 	let fv = fvCache[expression];

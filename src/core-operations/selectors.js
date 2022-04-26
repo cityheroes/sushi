@@ -1,6 +1,6 @@
 import Helper from '../common/Helper';
 import Tools from '../common/Tools';
-import FormulaValues from 'formula-values';
+import { FormulaValue } from 'formula-values';
 
 let fvCache = {};
 
@@ -249,7 +249,7 @@ export default {
 		}
 
 		if (!fvCache[selector.expr]) {
-			fvCache[selector.expr] = new FormulaValues(selector.expr);
+			fvCache[selector.expr] = new FormulaValue(selector.expr);
 		}
 
 		let fv = fvCache[selector.expr];

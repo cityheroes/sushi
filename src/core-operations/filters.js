@@ -1,4 +1,4 @@
-import FormulaValues from 'formula-values';
+import { FormulaValue } from 'formula-values';
 
 import Tools from '../common/Tools';
 import Helper from '../common/Helper';
@@ -23,7 +23,7 @@ const extractSubject = (item = {}, filter = {}, defaultValue = null) => {
 		let expr = filter.expr;
 
 		if (!fvCache[expr]) {
-			fvCache[expr] = new FormulaValues(expr);
+			fvCache[expr] = new FormulaValue(expr);
 		}
 
 		let fv = fvCache[expr];
